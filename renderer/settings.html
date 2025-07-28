@@ -5,36 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ctrl Settings</title>
     <link rel="stylesheet" href="styles/settings.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 <body>
     <div class="settings-container">
         <header class="settings-header">
-            <h1>Ctrl Settings</h1>
+            <h1>Ctrl Preferences</h1>
             <div class="header-tabs">
-                <button class="tab-button active" data-tab="snippets">
-                    <svg class="tab-icon" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" clip-rule="evenodd" />
-                    </svg>
+                <button class="tab-button active" data-tab="general">
+                    <i data-lucide="settings" class="tab-icon"></i>
+                    General
+                </button>
+                <button class="tab-button" data-tab="appearance">
+                    <i data-lucide="palette" class="tab-icon"></i>
+                    Appearance
+                </button>
+                <button class="tab-button" data-tab="snippets">
+                    <i data-lucide="code" class="tab-icon"></i>
                     Snippets
                 </button>
                 <button class="tab-button" data-tab="documents">
-                    <svg class="tab-icon" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
-                    </svg>
+                    <i data-lucide="file-text" class="tab-icon"></i>
                     Documents
+                </button>
+                <button class="tab-button" data-tab="about">
+                    <i data-lucide="info" class="tab-icon"></i>
+                    About
                 </button>
             </div>
         </header>
 
         <main class="settings-content">
+            <!-- General Tab -->
+            <div class="tab-content active" id="general-tab">
+                <div class="section-header">
+                    <h2>General Settings</h2>
+                </div>
+                <div class="items-list">
+                    <div class="item">
+                        <div class="item-content">
+                            <div class="item-title">Launch at login</div>
+                            <div class="item-subtitle">Automatically start Ctrl when you log in</div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="action-button">
+                                <i data-lucide="toggle-left" class="action-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="item">
+                        <div class="item-content">
+                            <div class="item-title">Global shortcut</div>
+                            <div class="item-subtitle">Cmd+Space to open Ctrl</div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="action-button">
+                                <i data-lucide="edit" class="action-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appearance Tab -->
+            <div class="tab-content" id="appearance-tab">
+                <div class="section-header">
+                    <h2>Appearance</h2>
+                </div>
+                <div class="items-list">
+                    <div class="item">
+                        <div class="item-content">
+                            <div class="item-title">Theme</div>
+                            <div class="item-subtitle">Choose your preferred theme</div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="action-button">
+                                <i data-lucide="sun" class="action-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Snippets Tab -->
-            <div class="tab-content active" id="snippets-tab">
+            <div class="tab-content" id="snippets-tab">
                 <div class="section-header">
                     <h2>Code Snippets</h2>
                     <button class="add-button" id="addSnippetBtn">
-                        <svg class="add-icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                        </svg>
+                        <i data-lucide="plus" class="add-icon"></i>
                         Add Snippet
                     </button>
                 </div>
@@ -57,9 +115,7 @@
                 <div class="section-header">
                     <h2>Documents</h2>
                     <button class="add-button" id="addDocumentBtn">
-                        <svg class="add-icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                        </svg>
+                        <i data-lucide="plus" class="add-icon"></i>
                         Add Document
                     </button>
                 </div>
@@ -77,9 +133,29 @@
                     <!-- Documents will be populated here -->
                 </div>
             </div>
+
+            <!-- About Tab -->
+            <div class="tab-content" id="about-tab">
+                <div class="section-header">
+                    <h2>About Ctrl</h2>
+                </div>
+                <div style="text-align: center; padding: 40px 20px;">
+                    <div style="margin-bottom: 24px;">
+                        <i data-lucide="zap" style="width: 64px; height: 64px; color: #007aff;"></i>
+                    </div>
+                    <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #1d1d1f;">Ctrl</h3>
+                    <p style="color: #86868b; margin-bottom: 16px;">Version 1.0.0</p>
+                    <p style="color: #86868b; font-size: 14px; max-width: 400px; margin: 0 auto;">
+                        A fast and minimal launcher for your code snippets and documents.
+                    </p>
+                </div>
+            </div>
         </main>
     </div>
 
     <script src="scripts/settings.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 </html>

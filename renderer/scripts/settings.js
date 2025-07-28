@@ -2,7 +2,7 @@ class CtrlSettings {
   constructor() {
     this.snippets = [];
     this.documents = [];
-    this.currentTab = "snippets";
+    this.currentTab = "general";
 
     this.init();
   }
@@ -166,12 +166,11 @@ class CtrlSettings {
     if (this.snippets.length === 0) {
       container.innerHTML = `
                 <div class="empty-state">
-                    <svg class="empty-state-icon" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" clip-rule="evenodd" />
-                    </svg>
+                    <i data-lucide="code" class="empty-state-icon"></i>
                     <p>No snippets yet. Add your first snippet to get started!</p>
                 </div>
             `;
+      lucide.createIcons();
       return;
     }
 
@@ -191,17 +190,12 @@ class CtrlSettings {
                     <button class="action-button" onclick="ctrlSettings.copySnippet(${
                       snippet.id
                     })" title="Copy to clipboard">
-                        <svg class="action-icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
-                            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
-                        </svg>
+                        <i data-lucide="copy" class="action-icon"></i>
                     </button>
                     <button class="action-button delete" onclick="ctrlSettings.deleteSnippet(${
                       snippet.id
                     })" title="Delete snippet">
-                        <svg class="action-icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
+                        <i data-lucide="trash-2" class="action-icon"></i>
                     </button>
                 </div>
             </div>
@@ -210,6 +204,7 @@ class CtrlSettings {
       .join("");
 
     container.innerHTML = html;
+    lucide.createIcons();
   }
 
   async copySnippet(id) {
@@ -300,12 +295,11 @@ class CtrlSettings {
     if (this.documents.length === 0) {
       container.innerHTML = `
                 <div class="empty-state">
-                    <svg class="empty-state-icon" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
-                    </svg>
+                    <i data-lucide="file-text" class="empty-state-icon"></i>
                     <p>No documents yet. Add your first document link to get started!</p>
                 </div>
             `;
+      lucide.createIcons();
       return;
     }
 
@@ -325,17 +319,12 @@ class CtrlSettings {
                     <button class="action-button" onclick="ctrlSettings.openDocument(${
                       document.id
                     })" title="Open document">
-                        <svg class="action-icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
-                            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
-                        </svg>
+                        <i data-lucide="external-link" class="action-icon"></i>
                     </button>
                     <button class="action-button delete" onclick="ctrlSettings.deleteDocument(${
                       document.id
                     })" title="Delete document">
-                        <svg class="action-icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
+                        <i data-lucide="trash-2" class="action-icon"></i>
                     </button>
                 </div>
             </div>
@@ -344,6 +333,7 @@ class CtrlSettings {
       .join("");
 
     container.innerHTML = html;
+    lucide.createIcons();
   }
 
   async openDocument(id) {
