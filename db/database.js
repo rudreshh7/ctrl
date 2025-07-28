@@ -20,6 +20,8 @@ function initDatabase() {
             `
           CREATE TABLE IF NOT EXISTS snippets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            description TEXT,
             content TEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
@@ -112,12 +114,22 @@ function getAllSnippets() {
   });
 }
 
-function addSnippet(content) {
+function addSnippet(title, description, content) {
   return new Promise((resolve, reject) => {
     try {
+      // Validate that content is not empty
+      if (!content || content.trim() === "") {
+        console.error("Content is required and cannot be empty");
+        resolve({
+          success: false,
+          error: "Content is required and cannot be empty",
+        });
+        return;
+      }
+
       db.run(
-        "INSERT INTO snippets (content) VALUES (?)",
-        [content],
+        "INSERT INTO snippets (title, description, content) VALUES (?, ?, ?)",
+        [title || "", description || "", content.trim()],
         function (err) {
           if (err) {
             console.error("Error adding snippet:", err);
@@ -292,13 +304,31 @@ async function addSampleData() {
     console.log("Adding sample data...");
 
     // Add sample snippets
-    await addSnippet("console.log('Hello World');");
     await addSnippet(
+      "Hello World",
+      "Basic console log",
+      "console.log('Hello World');"
+    );
+    await addSnippet(
+      "Express Setup",
+      "Basic Express.js server setup",
       "const express = require('express');\nconst app = express();"
     );
-    await addSnippet("SELECT * FROM users WHERE active = 1;");
-    await addSnippet("git add . && git commit -m 'Initial commit'");
-    await addSnippet("npm install express mongoose cors dotenv");
+    await addSnippet(
+      "SQL Query",
+      "Get active users",
+      "SELECT * FROM users WHERE active = 1;"
+    );
+    await addSnippet(
+      "Git Commit",
+      "Add and commit changes",
+      "git add . && git commit -m 'Initial commit'"
+    );
+    await addSnippet(
+      "NPM Install",
+      "Install common packages",
+      "npm install express mongoose cors dotenv"
+    );
 
     // Add sample documents
     await addDocument("React Documentation", "https://reactjs.org/docs");

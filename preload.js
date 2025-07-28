@@ -5,7 +5,8 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("electronAPI", {
   // Snippet operations
   getSnippets: () => ipcRenderer.invoke("get-snippets"),
-  addSnippet: (content) => ipcRenderer.invoke("add-snippet", content),
+  addSnippet: (title, description, content) =>
+    ipcRenderer.invoke("add-snippet", title, description, content),
   deleteSnippet: (id) => ipcRenderer.invoke("delete-snippet", id),
 
   // Document operations

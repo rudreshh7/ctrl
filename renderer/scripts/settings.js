@@ -197,11 +197,29 @@ class CtrlSettings {
 
   hideSnippetForm() {
     document.getElementById("snippetForm").classList.add("hidden");
+    document.getElementById("snippetTitle").value = "";
+    document.getElementById("snippetDescription").value = "";
     document.getElementById("snippetContent").value = "";
   }
 
   async saveSnippet() {
+    const title = document.getElementById("snippetTitle").value.trim();
+    const description = document
+      .getElementById("snippetDescription")
+      .value.trim();
     const content = document.getElementById("snippetContent").value.trim();
+
+    // Debug logging
+    console.log("Settings saveSnippet - captured values:", {
+      title,
+      description,
+      content,
+    });
+
+    if (!title) {
+      alert("Please enter snippet title");
+      return;
+    }
 
     if (!content) {
       alert("Please enter snippet content");
@@ -209,7 +227,11 @@ class CtrlSettings {
     }
 
     try {
-      const result = await window.electronAPI.addSnippet(content);
+      const result = await window.electronAPI.addSnippet(
+        title,
+        description,
+        content
+      );
       if (result.success) {
         await this.loadData();
         this.renderSnippets();
@@ -263,11 +285,11 @@ class CtrlSettings {
         (snippet) => `
             <div class="item">
                 <div class="item-content">
-                    <div class="item-title">${this.getSnippetPreview(
-                      snippet.content
+                    <div class="item-title">${this.escapeHtml(
+                      snippet.title || this.getSnippetPreview(snippet.content)
                     )}</div>
                     <div class="item-subtitle">${this.escapeHtml(
-                      snippet.content
+                      snippet.description || snippet.content
                     )}</div>
                 </div>
                 <div class="item-actions">

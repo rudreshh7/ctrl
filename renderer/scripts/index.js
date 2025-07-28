@@ -221,11 +221,11 @@ class CtrlSearch {
           id: item.id,
           title:
             item.type === "snippet"
-              ? this.getSnippetPreview(item.content)
+              ? item.title || this.getSnippetPreview(item.content)
               : item.title || item.content,
           subtitle:
             item.type === "snippet"
-              ? item.content
+              ? item.description || item.content
               : item.type === "document"
               ? item.link
               : item.url || item.description,
@@ -532,9 +532,9 @@ class CtrlSearch {
     } else if (result.type === "snippet") {
       await navigator.clipboard.writeText(result.data.content);
     } else if (result.type === "document") {
-      window.electronAPI.openURL(result.data.link);
+      window.electronAPI.openExternal(result.data.link);
     } else if (result.type === "bookmark") {
-      window.electronAPI.openURL(result.data.url);
+      window.electronAPI.openExternal(result.data.url);
     }
 
     window.electronAPI.hideWindow();
@@ -858,6 +858,27 @@ class CtrlSearch {
         
         <div class="form-content">
           <div class="form-group">
+            <label for="snippet-title">Title *</label>
+            <input 
+              type="text" 
+              id="snippet-title" 
+              class="form-input" 
+              placeholder="e.g., Hello World, Express Setup"
+              required
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="snippet-description">Description (Optional)</label>
+            <input 
+              type="text" 
+              id="snippet-description" 
+              class="form-input" 
+              placeholder="Brief description of this snippet..."
+            />
+          </div>
+          
+          <div class="form-group">
             <label for="snippet-content">Code Snippet *</label>
             <textarea 
               id="snippet-content" 
@@ -882,13 +903,15 @@ class CtrlSearch {
     this.resultsContainer.innerHTML = addSnippetHTML;
     this.setupAddSnippetEvents();
 
-    // Focus the textarea
+    // Focus the title input
     setTimeout(() => {
-      document.getElementById("snippet-content").focus();
+      document.getElementById("snippet-title").focus();
     }, 100);
   }
 
   setupAddSnippetEvents() {
+    const titleInput = document.getElementById("snippet-title");
+    const descriptionInput = document.getElementById("snippet-description");
     const contentTextarea = document.getElementById("snippet-content");
     const saveBtn = document.getElementById("save-snippet-btn");
     const clearBtn = document.getElementById("clear-snippet-btn");
@@ -903,26 +926,49 @@ class CtrlSearch {
     // Back button
     backBtn.addEventListener("click", () => this.exitAddForm());
 
-    // Keyboard shortcuts
-    contentTextarea.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        this.saveSnippet();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-        e.preventDefault();
-        this.saveSnippet();
-      } else if (e.key === "Escape") {
-        this.exitAddForm();
-      }
+    // Keyboard shortcuts for all inputs
+    [titleInput, descriptionInput, contentTextarea].forEach((input) => {
+      input.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+          e.preventDefault();
+          this.saveSnippet();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          this.saveSnippet();
+        } else if (e.key === "Escape") {
+          this.exitAddForm();
+        }
+      });
     });
   }
 
   async saveSnippet() {
+    const titleInput = document.getElementById("snippet-title");
+    const descriptionInput = document.getElementById("snippet-description");
     const contentTextarea = document.getElementById("snippet-content");
     const saveBtn = document.getElementById("save-snippet-btn");
     const statusDiv = document.getElementById("snippet-status");
 
+    const title = titleInput.value.trim();
+    const description = descriptionInput.value.trim();
     const content = contentTextarea.value.trim();
+
+    // Debug logging
+    console.log("Index saveSnippet - captured values:", {
+      title,
+      description,
+      content,
+    });
+
+    if (!title) {
+      this.showFormMessage(
+        "snippet-status",
+        "Please enter snippet title",
+        "error"
+      );
+      titleInput.focus();
+      return;
+    }
 
     if (!content) {
       this.showFormMessage(
@@ -939,7 +985,11 @@ class CtrlSearch {
       saveBtn.textContent = "💾 Saving...";
 
       // Save to database using Electron API
-      const result = await window.electronAPI.addSnippet(content);
+      const result = await window.electronAPI.addSnippet(
+        title,
+        description,
+        content
+      );
 
       if (result.success) {
         this.showFormMessage(
@@ -976,10 +1026,15 @@ class CtrlSearch {
   }
 
   clearSnippetForm() {
+    const titleInput = document.getElementById("snippet-title");
+    const descriptionInput = document.getElementById("snippet-description");
     const contentTextarea = document.getElementById("snippet-content");
+
+    titleInput.value = "";
+    descriptionInput.value = "";
     contentTextarea.value = "";
     this.hideFormMessage("snippet-status");
-    contentTextarea.focus();
+    titleInput.focus();
   }
 
   showAddDocumentForm() {

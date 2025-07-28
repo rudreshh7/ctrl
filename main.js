@@ -111,9 +111,12 @@ class CtrlApp {
       return getAllSnippets();
     });
 
-    ipcMain.handle("add-snippet", async (event, content) => {
-      return addSnippet(content);
-    });
+    ipcMain.handle(
+      "add-snippet",
+      async (event, title, description, content) => {
+        return addSnippet(title, description, content);
+      }
+    );
 
     ipcMain.handle("delete-snippet", async (event, id) => {
       return deleteSnippet(id);
