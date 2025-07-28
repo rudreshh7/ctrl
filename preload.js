@@ -13,6 +13,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   addDocument: (title, link) => ipcRenderer.invoke("add-document", title, link),
   deleteDocument: (id) => ipcRenderer.invoke("delete-document", id),
 
+  // Bookmark operations
+  getBookmarks: () => ipcRenderer.invoke("get-bookmarks"),
+  addBookmark: (title, url, description) =>
+    ipcRenderer.invoke("add-bookmark", title, url, description),
+  deleteBookmark: (id) => ipcRenderer.invoke("delete-bookmark", id),
+
   // Utility operations
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
   hideWindow: () => ipcRenderer.invoke("hide-window"),

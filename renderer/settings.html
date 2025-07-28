@@ -31,10 +31,6 @@
                     <i data-lucide="settings" class="tab-icon"></i>
                     General
                 </button>
-                <button class="tab-button" data-tab="appearance">
-                    <i data-lucide="palette" class="tab-icon"></i>
-                    Appearance
-                </button>
                 <button class="tab-button" data-tab="snippets">
                     <i data-lucide="code" class="tab-icon"></i>
                     Snippets
@@ -42,6 +38,10 @@
                 <button class="tab-button" data-tab="documents">
                     <i data-lucide="file-text" class="tab-icon"></i>
                     Documents
+                </button>
+                <button class="tab-button" data-tab="bookmarks">
+                    <i data-lucide="bookmark" class="tab-icon"></i>
+                    Bookmarks
                 </button>
                 <button class="tab-button" data-tab="about">
                     <i data-lucide="info" class="tab-icon"></i>
@@ -79,15 +79,6 @@
                             </button>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Appearance Tab -->
-            <div class="tab-content" id="appearance-tab">
-                <div class="section-header">
-                    <h2>Appearance</h2>
-                </div>
-                <div class="items-list">
                     <div class="item">
                         <div class="item-content">
                             <div class="item-title">Theme</div>
@@ -146,6 +137,31 @@
 
                 <div class="items-list" id="documentsList">
                     <!-- Documents will be populated here -->
+                </div>
+            </div>
+
+            <!-- Bookmarks Tab -->
+            <div class="tab-content" id="bookmarks-tab">
+                <div class="section-header">
+                    <h2>Bookmarks</h2>
+                    <button class="add-button" id="addBookmarkBtn">
+                        <i data-lucide="plus" class="add-icon"></i>
+                        Add Bookmark
+                    </button>
+                </div>
+
+                <div class="add-form hidden" id="bookmarkForm">
+                    <input type="text" id="bookmarkTitle" placeholder="Bookmark title..." />
+                    <input type="url" id="bookmarkUrl" placeholder="https://example.com..." />
+                    <textarea id="bookmarkDescription" placeholder="Optional description..." rows="2"></textarea>
+                    <div class="form-actions">
+                        <button class="save-button" id="saveBookmarkBtn">Save</button>
+                        <button class="cancel-button" id="cancelBookmarkBtn">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="items-list" id="bookmarksList">
+                    <!-- Bookmarks will be populated here -->
                 </div>
             </div>
 

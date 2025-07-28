@@ -2,6 +2,7 @@ class CtrlSettings {
   constructor() {
     this.snippets = [];
     this.documents = [];
+    this.bookmarks = [];
     this.currentTab = "general";
     this.hasChanges = false;
 
@@ -13,6 +14,7 @@ class CtrlSettings {
     this.bindEvents();
     this.renderSnippets();
     this.renderDocuments();
+    this.renderBookmarks();
     this.setupRestartNotification();
   }
 
@@ -20,6 +22,7 @@ class CtrlSettings {
     try {
       this.snippets = await window.electronAPI.getSnippets();
       this.documents = await window.electronAPI.getDocuments();
+      this.bookmarks = await window.electronAPI.getBookmarks();
     } catch (error) {
       console.error("Failed to load data:", error);
     }
@@ -89,6 +92,46 @@ class CtrlSettings {
         this.saveDocument();
       }
     });
+
+    // Bookmark form events
+    document.getElementById("addBookmarkBtn").addEventListener("click", () => {
+      this.showBookmarkForm();
+    });
+
+    document.getElementById("saveBookmarkBtn").addEventListener("click", () => {
+      this.saveBookmark();
+    });
+
+    document
+      .getElementById("cancelBookmarkBtn")
+      .addEventListener("click", () => {
+        this.hideBookmarkForm();
+      });
+
+    document
+      .getElementById("bookmarkTitle")
+      .addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          document.getElementById("bookmarkUrl").focus();
+        }
+      });
+
+    document.getElementById("bookmarkUrl").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("bookmarkDescription").focus();
+      }
+    });
+
+    document
+      .getElementById("bookmarkDescription")
+      .addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault();
+          this.saveBookmark();
+        }
+      });
   }
 
   setupRestartNotification() {
@@ -143,6 +186,7 @@ class CtrlSettings {
     // Hide any open forms when switching tabs
     this.hideSnippetForm();
     this.hideDocumentForm();
+    this.hideBookmarkForm();
   }
 
   // Snippet management
@@ -382,6 +426,140 @@ class CtrlSettings {
     const document = this.documents.find((d) => d.id === id);
     if (document) {
       await window.electronAPI.openExternal(document.link);
+    }
+  }
+
+  // Bookmark management
+  showBookmarkForm() {
+    document.getElementById("bookmarkForm").classList.remove("hidden");
+    document.getElementById("bookmarkTitle").focus();
+  }
+
+  hideBookmarkForm() {
+    document.getElementById("bookmarkForm").classList.add("hidden");
+    document.getElementById("bookmarkTitle").value = "";
+    document.getElementById("bookmarkUrl").value = "";
+    document.getElementById("bookmarkDescription").value = "";
+  }
+
+  async saveBookmark() {
+    const title = document.getElementById("bookmarkTitle").value.trim();
+    const url = document.getElementById("bookmarkUrl").value.trim();
+    const description = document
+      .getElementById("bookmarkDescription")
+      .value.trim();
+
+    if (!title || !url) {
+      alert("Please enter both title and URL");
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(url);
+    } catch {
+      alert("Please enter a valid URL");
+      return;
+    }
+
+    try {
+      const result = await window.electronAPI.addBookmark(
+        title,
+        url,
+        description
+      );
+      if (result.success) {
+        await this.loadData();
+        this.renderBookmarks();
+        this.hideBookmarkForm();
+        this.showRestartNotification();
+      } else {
+        alert("Failed to save bookmark: " + result.error);
+      }
+    } catch (error) {
+      console.error("Error saving bookmark:", error);
+      alert("Failed to save bookmark");
+    }
+  }
+
+  async deleteBookmark(id) {
+    if (!confirm("Are you sure you want to delete this bookmark?")) {
+      return;
+    }
+
+    try {
+      const result = await window.electronAPI.deleteBookmark(id);
+      if (result.success) {
+        await this.loadData();
+        this.renderBookmarks();
+        this.showRestartNotification();
+      } else {
+        alert("Failed to delete bookmark");
+      }
+    } catch (error) {
+      console.error("Error deleting bookmark:", error);
+      alert("Failed to delete bookmark");
+    }
+  }
+
+  renderBookmarks() {
+    const container = document.getElementById("bookmarksList");
+
+    if (this.bookmarks.length === 0) {
+      container.innerHTML = `
+                <div class="empty-state">
+                    <i data-lucide="bookmark" class="empty-state-icon"></i>
+                    <p>No bookmarks yet. Add your first bookmark to get started!</p>
+                </div>
+            `;
+      lucide.createIcons();
+      return;
+    }
+
+    const html = this.bookmarks
+      .map(
+        (bookmark) => `
+            <div class="item">
+                <div class="item-content">
+                    <div class="item-title">${this.escapeHtml(
+                      bookmark.title
+                    )}</div>
+                    <div class="item-subtitle">${this.escapeHtml(
+                      bookmark.url
+                    )}</div>
+                    ${
+                      bookmark.description
+                        ? `<div class="item-description">${this.escapeHtml(
+                            bookmark.description
+                          )}</div>`
+                        : ""
+                    }
+                </div>
+                <div class="item-actions">
+                    <button class="action-button" onclick="ctrlSettings.openBookmark(${
+                      bookmark.id
+                    })" title="Open bookmark">
+                        <i data-lucide="external-link" class="action-icon"></i>
+                    </button>
+                    <button class="action-button delete" onclick="ctrlSettings.deleteBookmark(${
+                      bookmark.id
+                    })" title="Delete bookmark">
+                        <i data-lucide="trash-2" class="action-icon"></i>
+                    </button>
+                </div>
+            </div>
+        `
+      )
+      .join("");
+
+    container.innerHTML = html;
+    lucide.createIcons();
+  }
+
+  async openBookmark(id) {
+    const bookmark = this.bookmarks.find((b) => b.id === id);
+    if (bookmark) {
+      await window.electronAPI.openExternal(bookmark.url);
     }
   }
 

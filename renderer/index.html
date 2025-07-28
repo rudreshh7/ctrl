@@ -6,13 +6,14 @@
     <title>Ctrl</title>
     <link rel="stylesheet" href="styles/style.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
 </head>
 <body>
     <div class="container">
         <div class="search-container">
             <div class="search-box">
                 <i data-lucide="search" class="search-icon"></i>
-                <input type="text" id="searchInput" placeholder="Search snippets and documents..." autocomplete="off" spellcheck="false">
+                <input type="text" id="searchInput" placeholder="Fuzzy search snippets, documents, and bookmarks..." autocomplete="off" spellcheck="false">
             </div>
         </div>
 
@@ -35,13 +36,16 @@
                     <kbd>Esc</kbd> Close
                 </span>
                 <span class="shortcut">
+                    <kbd>Ctrl</kbd><kbd>/</kbd> Focus
+                </span>
+                <span class="shortcut">
                     Type "settings" to configure
                 </span>
             </div>
         </div>
     </div>
 
-    <script src="scripts/index.js"></script>
+    <script type="module" src="scripts/index.js"></script>
     <script>
         lucide.createIcons();
     </script>

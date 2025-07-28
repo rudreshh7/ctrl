@@ -1,34 +1,118 @@
+// Import modules
+import { EmojiPicker } from "./modules/emojiPicker.js";
+
 class CtrlSearch {
   constructor() {
+    console.log("CtrlSearch constructor called");
+
     this.snippets = [];
     this.documents = [];
+    this.bookmarks = [];
     this.currentResults = [];
     this.selectedIndex = 0;
 
+    // Initialize modules
+    this.emojiPicker = new EmojiPicker();
+
+    // UI elements
     this.searchInput = document.getElementById("searchInput");
     this.resultsContainer = document.getElementById("resultsContainer");
+
+    console.log("Search input element:", this.searchInput);
+    console.log("Results container element:", this.resultsContainer);
+
+    // Event listeners
+    this.setupEventListeners();
 
     this.init();
   }
 
   async init() {
     await this.loadData();
-    this.bindEvents();
     this.focusSearch();
   }
 
   async loadData() {
     try {
+      console.log("Loading data...");
       this.snippets = await window.electronAPI.getSnippets();
       this.documents = await window.electronAPI.getDocuments();
+      this.bookmarks = await window.electronAPI.getBookmarks();
+
+      console.log("Data loaded:", {
+        snippets: this.snippets.length,
+        documents: this.documents.length,
+        bookmarks: this.bookmarks.length,
+      });
+
+      if (this.snippets.length > 0) {
+        console.log("Sample snippet:", this.snippets[0]);
+      }
+
+      // Initialize Fuse.js for search
+      this.initializeFuse();
     } catch (error) {
       console.error("Failed to load data:", error);
     }
   }
 
-  bindEvents() {
+  initializeFuse() {
+    console.log("Initializing Fuse.js...");
+
+    // Check if Fuse is available
+    if (typeof Fuse === "undefined") {
+      console.error("Fuse.js is not loaded!");
+      return;
+    }
+
+    console.log("Fuse.js is available");
+
+    // Enhanced Fuse options for better search
+    const options = {
+      keys: [
+        { name: "content", weight: 0.7 },
+        { name: "title", weight: 0.8 },
+        { name: "url", weight: 0.4 },
+        { name: "link", weight: 0.4 },
+        { name: "description", weight: 0.5 },
+      ],
+      threshold: 0.6, // More lenient for fuzzy matching
+      includeScore: true,
+      includeMatches: true,
+      minMatchCharLength: 1, // Allow single character searches
+      distance: 100, // Allow matches further apart
+      location: 0, // Prefer matches at the beginning
+      shouldSort: true,
+      ignoreLocation: false,
+      ignoreFieldNorm: false,
+      fieldNormWeight: 1,
+    };
+
+    try {
+      // Create combined data for search
+      const allData = [
+        ...this.snippets.map((item) => ({ ...item, type: "snippet" })),
+        ...this.documents.map((item) => ({ ...item, type: "document" })),
+        ...this.bookmarks.map((item) => ({ ...item, type: "bookmark" })),
+      ];
+
+      this.fuse = new Fuse(allData, options);
+      console.log(
+        "Fuse.js initialized successfully with",
+        allData.length,
+        "items"
+      );
+    } catch (error) {
+      console.error("Error creating Fuse.js instance:", error);
+    }
+  }
+
+  setupEventListeners() {
+    console.log("Setting up event listeners");
+
     // Search input events
     this.searchInput.addEventListener("input", (e) => {
+      console.log("Input event triggered:", e.target.value);
       this.handleSearch(e.target.value);
     });
 
@@ -36,20 +120,34 @@ class CtrlSearch {
       this.handleKeyDown(e);
     });
 
-    // Focus search when window receives focus
-    window.electronAPI.onFocusSearch(() => {
-      this.focusSearch();
-    });
-
     // Global keyboard shortcuts
     document.addEventListener("keydown", (e) => {
+      console.log("Key pressed:", e.key);
       if (e.key === "Escape") {
-        window.electronAPI.hideWindow();
+        if (this.emojiPicker.isInEmojiMode()) {
+          e.preventDefault();
+          this.exitEmojiMode();
+        } else {
+          console.log("Hiding window");
+          window.electronAPI.hideWindow();
+        }
       } else if (e.key === "," && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         window.electronAPI.openSettings();
+      } else if (e.key === "/" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        this.focusSearch();
       }
     });
+
+    // Listen for messages from apps (like sum calculator)
+    window.addEventListener("message", (e) => {
+      if (e.data && e.data.action === "focusSearch") {
+        this.focusSearch();
+      }
+    });
+
+    console.log("Event listeners setup complete");
   }
 
   focusSearch() {
@@ -59,170 +157,328 @@ class CtrlSearch {
     }, 100);
   }
 
-  updatePlatformShortcuts() {
-    // Update settings shortcut based on platform
-    const settingsKeyElement = document.getElementById("settingsKey");
-    if (settingsKeyElement) {
-      if (window.electronAPI.platform === "win32") {
-        settingsKeyElement.textContent = "Win";
-      } else if (window.electronAPI.platform === "darwin") {
-        settingsKeyElement.textContent = "⌘";
-      } else {
-        settingsKeyElement.textContent = "Ctrl";
-      }
-    }
-  }
-
   handleSearch(query) {
+    console.log("handleSearch called with query:", query);
+
     if (!query.trim()) {
-      this.showEmptyState();
+      console.log("Empty query, showing empty state");
+      if (this.emojiPicker.isInEmojiMode()) {
+        const results = this.emojiPicker.showEmojiPickerInterface();
+        this.displayResults(results);
+      } else {
+        this.showEmptyState();
+      }
       return;
     }
 
+    // Check if user wants to enter emoji mode
+    if (query === ":" && !this.emojiPicker.isInEmojiMode()) {
+      console.log("Entering emoji mode");
+      this.enterEmojiMode();
+      return;
+    }
+
+    // If query starts with ":" and we're not in emoji mode, enter emoji mode with search
+    if (query.startsWith(":") && !this.emojiPicker.isInEmojiMode()) {
+      console.log("Entering emoji mode with search");
+      this.enterEmojiMode();
+      const emojiQuery = query.substring(1);
+      const results = this.emojiPicker.searchEmojisInPicker(emojiQuery);
+      this.displayResults(results);
+      return;
+    }
+
+    console.log("Performing normal search");
     const results = this.searchItems(query);
     this.displayResults(results);
-    this.selectedIndex = 0;
-    this.updateSelection();
   }
 
   searchItems(query) {
-    const lowerQuery = query.toLowerCase();
-    const results = [];
+    console.log("searchItems called with query:", query);
 
-    // Search system commands
-    const systemCommands = [
-      {
+    // If in emoji mode, search emojis
+    if (this.emojiPicker.isInEmojiMode()) {
+      return this.emojiPicker.searchEmojisInPicker(query);
+    }
+
+    const results = [];
+    const lowerQuery = query.toLowerCase().trim();
+
+    // Smart system commands - instant matching with single letters
+    const systemCommands = this.getSystemCommands(lowerQuery);
+    results.push(...systemCommands);
+
+    // Search with Fuse.js for content (even with single character)
+    if (this.fuse && query.length >= 1) {
+      console.log("Searching with Fuse.js for:", query);
+      const fuseResults = this.fuse.search(query);
+      console.log("Fuse results:", fuseResults.length);
+
+      fuseResults.forEach((result) => {
+        const item = result.item;
+        results.push({
+          type: item.type,
+          id: item.id,
+          title:
+            item.type === "snippet"
+              ? this.getSnippetPreview(item.content)
+              : item.title || item.content,
+          subtitle:
+            item.type === "snippet"
+              ? item.content
+              : item.type === "document"
+              ? item.link
+              : item.url || item.description,
+          data: item,
+          score: result.score,
+        });
+      });
+    }
+
+    // Add external search options at the bottom (lower priority)
+    if (query.trim().length > 0) {
+      results.push({
         type: "system",
-        id: "settings",
-        title: "Settings",
-        subtitle: "Open Ctrl settings to manage snippets and documents",
-        keywords: ["settings", "preferences", "config", "configure", "manage"],
+        id: "google-search",
+        title: `🔍 Search Google for "${query.trim()}"`,
+        subtitle: `Open Google search in your default browser`,
+        data: { searchQuery: query.trim() },
+        score: 10, // Lower priority - appears at bottom
+      });
+
+      // Add ChatGPT search option
+      results.push({
+        type: "system",
+        id: "chatgpt-search",
+        title: `🤖 Ask ChatGPT about "${query.trim()}"`,
+        subtitle: `Open ChatGPT with your question in the default browser`,
+        data: { searchQuery: query.trim() },
+        score: 11, // Lowest priority - appears last
+      });
+    }
+
+    console.log("Total results:", results.length);
+    return results.sort((a, b) => (a.score || 0) - (b.score || 0));
+  }
+
+  getSystemCommands(query) {
+    const commands = [];
+
+    // Smart shortcuts for common commands
+    const shortcuts = [
+      {
+        triggers: [
+          "s",
+          "set",
+          "setting",
+          "settings",
+          "config",
+          "configuration",
+          "pref",
+          "preferences",
+        ],
+        command: {
+          type: "system",
+          id: "settings",
+          title: "Settings",
+          subtitle: "Open Ctrl settings and preferences",
+          score: -1, // High priority
+        },
+      },
+      {
+        triggers: ["e", "emoji", "emojis", ":"],
+        command: {
+          type: "system",
+          id: "emoji",
+          title: "Emoji Picker",
+          subtitle: "Browse and search emojis",
+          score: -1,
+        },
+      },
+      {
+        triggers: ["h", "help", "?"],
+        command: {
+          type: "system",
+          id: "help",
+          title: "Help",
+          subtitle: "Show keyboard shortcuts and help",
+          score: -1,
+        },
+      },
+      {
+        triggers: ["q", "quit", "exit"],
+        command: {
+          type: "system",
+          id: "quit",
+          title: "Quit",
+          subtitle: "Exit Ctrl application",
+          score: -1,
+        },
+      },
+      {
+        triggers: ["r", "reload", "refresh"],
+        command: {
+          type: "system",
+          id: "reload",
+          title: "Reload",
+          subtitle: "Reload application data",
+          score: -1,
+        },
+      },
+      {
+        triggers: ["sum", "calc", "calculator", "math", "add", "addition"],
+        command: {
+          type: "system",
+          id: "sum",
+          title: "Sum Calculator",
+          subtitle: "Calculate sum of numbers",
+          score: -1,
+        },
+      },
+      {
+        triggers: ["add-snippet", "new-snippet", "snippet", "create-snippet"],
+        command: {
+          type: "system",
+          id: "add-snippet",
+          title: "Add Snippet",
+          subtitle: "Create a new code snippet",
+          score: -1,
+        },
+      },
+      {
+        triggers: [
+          "add-document",
+          "new-document",
+          "document",
+          "create-document",
+        ],
+        command: {
+          type: "system",
+          id: "add-document",
+          title: "Add Document",
+          subtitle: "Create a new document link",
+          score: -1,
+        },
+      },
+      {
+        triggers: [
+          "add-bookmark",
+          "new-bookmark",
+          "bookmark",
+          "create-bookmark",
+        ],
+        command: {
+          type: "system",
+          id: "add-bookmark",
+          title: "Add Bookmark",
+          subtitle: "Create a new website bookmark",
+          score: -1,
+        },
       },
     ];
 
-    systemCommands.forEach((command) => {
-      if (
-        command.keywords.some((keyword) => keyword.includes(lowerQuery)) ||
-        command.title.toLowerCase().includes(lowerQuery)
-      ) {
-        results.push({
-          type: command.type,
-          id: command.id,
-          title: command.title,
-          subtitle: command.subtitle,
-          data: command,
-        });
+    // Check for exact matches and partial matches
+    shortcuts.forEach((shortcut) => {
+      const exactMatch = shortcut.triggers.includes(query);
+      const partialMatch = shortcut.triggers.some(
+        (trigger) => trigger.toLowerCase().startsWith(query) && query.length > 0
+      );
+
+      if (exactMatch || partialMatch) {
+        // Boost score for exact matches
+        const command = { ...shortcut.command };
+        if (exactMatch) {
+          command.score = -10; // Very high priority for exact matches
+          command.title = `★ ${command.title}`;
+        }
+        commands.push(command);
       }
     });
 
-    // Search snippets
-    this.snippets.forEach((snippet) => {
-      if (snippet.content.toLowerCase().includes(lowerQuery)) {
-        results.push({
-          type: "snippet",
-          id: snippet.id,
-          title: this.getSnippetPreview(snippet.content),
-          subtitle: snippet.content,
-          data: snippet,
-        });
-      }
-    });
-
-    // Search documents
-    this.documents.forEach((document) => {
-      if (
-        document.title.toLowerCase().includes(lowerQuery) ||
-        document.link.toLowerCase().includes(lowerQuery)
-      ) {
-        results.push({
-          type: "document",
-          id: document.id,
-          title: document.title,
-          subtitle: document.link,
-          data: document,
-        });
-      }
-    });
-
-    return results;
+    return commands;
   }
 
   getSnippetPreview(content) {
-    const firstLine = content.split("\n")[0];
-    return firstLine.length > 50
-      ? firstLine.substring(0, 50) + "..."
-      : firstLine;
+    return content.length > 50 ? content.substring(0, 50) + "..." : content;
   }
 
   displayResults(results) {
+    console.log("displayResults called with:", results.length, "results");
     this.currentResults = results;
+    this.selectedIndex = 0;
+    this.renderResults(results);
+  }
 
+  renderResults(results) {
     if (results.length === 0) {
       this.showNoResults();
       return;
     }
 
     const html = results
-      .map(
-        (result, index) => `
-            <div class="result-item" data-index="${index}">
-                <i data-lucide="${
-                  result.type === "snippet"
-                    ? "code"
-                    : result.type === "system"
-                    ? "settings"
-                    : "file-text"
-                }" class="result-icon"></i>
-                <div class="result-content">
-                    <div class="result-title">${this.escapeHtml(
-                      result.title
-                    )}</div>
-                    <div class="result-subtitle">${this.escapeHtml(
-                      result.subtitle
-                    )}</div>
-                </div>
-                <span class="result-type ${result.type}">${result.type}</span>
-            </div>
-        `
-      )
+      .map((result, index) => this.createResultHTML(result, index))
       .join("");
 
     this.resultsContainer.innerHTML = html;
+    this.addClickHandlers(results);
+    this.updateSelection(0);
 
-    // Add click handlers
+    // Re-initialize Lucide icons
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
+  }
+
+  createResultHTML(result, index) {
+    const icon = this.getResultIcon(result.type);
+
+    if (result.type === "emoji") {
+      return `
+        <div class="result-item emoji-item" data-index="${index}">
+          <div class="emoji-display">${result.data.emoji}</div>
+          <div class="result-content">
+            <div class="result-title">${result.data.name}</div>
+            <div class="result-subtitle">${result.subtitle}</div>
+          </div>
+          <span class="result-type emoji">emoji</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="result-item" data-index="${index}">
+        <i data-lucide="${icon}" class="result-icon"></i>
+        <div class="result-content">
+          <div class="result-title">${result.title}</div>
+          <div class="result-subtitle">${result.subtitle}</div>
+        </div>
+        <span class="result-type ${result.type}">${result.type}</span>
+      </div>
+    `;
+  }
+
+  getResultIcon(type) {
+    const iconMap = {
+      snippet: "code",
+      document: "file",
+      bookmark: "bookmark",
+      emoji: "smile",
+      system: "command",
+    };
+    return iconMap[type] || "file-text";
+  }
+
+  addClickHandlers(results) {
     this.resultsContainer.querySelectorAll(".result-item").forEach((item) => {
       item.addEventListener("click", () => {
         const index = parseInt(item.dataset.index);
         this.selectResult(index);
       });
     });
-
-    // Re-initialize Lucide icons
-    lucide.createIcons();
-  }
-
-  showEmptyState() {
-    this.currentResults = [];
-    this.resultsContainer.innerHTML = `
-            <div class="empty-state">
-                <i data-lucide="search" class="empty-icon"></i>
-                <p>Start typing to search...</p>
-            </div>
-        `;
-    lucide.createIcons();
-  }
-
-  showNoResults() {
-    this.resultsContainer.innerHTML = `
-            <div class="empty-state">
-                <i data-lucide="search-x" class="empty-icon"></i>
-                <p>No results found</p>
-            </div>
-        `;
-    lucide.createIcons();
   }
 
   handleKeyDown(e) {
+    console.log("Key down:", e.key);
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
@@ -230,12 +486,12 @@ class CtrlSearch {
           this.selectedIndex + 1,
           this.currentResults.length - 1
         );
-        this.updateSelection();
+        this.updateSelection(this.selectedIndex);
         break;
       case "ArrowUp":
         e.preventDefault();
         this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
-        this.updateSelection();
+        this.updateSelection(this.selectedIndex);
         break;
       case "Enter":
         e.preventDefault();
@@ -246,14 +502,13 @@ class CtrlSearch {
     }
   }
 
-  updateSelection() {
+  updateSelection(selectedIndex) {
     const items = this.resultsContainer.querySelectorAll(".result-item");
     items.forEach((item, index) => {
-      item.classList.toggle("selected", index === this.selectedIndex);
+      item.classList.toggle("selected", index === selectedIndex);
     });
 
-    // Scroll selected item into view
-    const selectedItem = items[this.selectedIndex];
+    const selectedItem = items[selectedIndex];
     if (selectedItem) {
       selectedItem.scrollIntoView({ block: "nearest" });
     }
@@ -263,31 +518,926 @@ class CtrlSearch {
     const result = this.currentResults[index];
     if (!result) return;
 
-    if (result.type === "snippet") {
-      // Copy snippet to clipboard
+    console.log("Selecting result:", result);
+
+    if (result.type === "emoji") {
+      const copyResult = await this.emojiPicker.selectEmoji(result.data);
+      if (copyResult.success) {
+        console.log(copyResult.message);
+      }
+      return;
+    } else if (result.type === "system") {
+      await this.handleSystemCommand(result.id, result);
+      return;
+    } else if (result.type === "snippet") {
       await navigator.clipboard.writeText(result.data.content);
     } else if (result.type === "document") {
-      // Open document link
-      await window.electronAPI.openExternal(result.data.link);
-    } else if (result.type === "system") {
-      // Handle system commands
-      if (result.id === "settings") {
-        await window.electronAPI.openSettings();
-      }
+      window.electronAPI.openURL(result.data.link);
+    } else if (result.type === "bookmark") {
+      window.electronAPI.openURL(result.data.url);
     }
 
-    // Hide window after selection
     window.electronAPI.hideWindow();
   }
 
-  escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+  async handleSystemCommand(commandId, result = null) {
+    console.log("Handling system command:", commandId);
+
+    switch (commandId) {
+      case "back":
+        this.exitEmojiMode();
+        break;
+
+      case "settings":
+        await window.electronAPI.openSettings();
+        window.electronAPI.hideWindow();
+        break;
+
+      case "emoji":
+        this.enterEmojiMode();
+        break;
+
+      case "help":
+        this.showHelpDialog();
+        break;
+
+      case "quit":
+        window.electronAPI.quitApp();
+        break;
+
+      case "reload":
+        await this.loadData();
+        this.searchInput.value = "";
+        this.showEmptyState();
+        this.focusSearch();
+        break;
+
+      case "sum":
+        this.showSumCalculator();
+        break;
+
+      case "add-snippet":
+        this.openAddSnippetApp();
+        break;
+
+      case "add-document":
+        this.openAddDocumentApp();
+        break;
+
+      case "add-bookmark":
+        this.openAddBookmarkApp();
+        break;
+
+      case "google-search":
+        await this.handleGoogleSearch(result?.data?.searchQuery);
+        break;
+
+      case "chatgpt-search":
+        await this.handleChatGPTSearch(result?.data?.searchQuery);
+        break;
+
+      default:
+        console.log("Unknown system command:", commandId);
+    }
+  }
+
+  async handleGoogleSearch(searchQuery) {
+    if (!searchQuery) {
+      console.error("No search query provided for Google search");
+      return;
+    }
+
+    console.log("Opening Google search for:", searchQuery);
+
+    // Encode the search query for URL
+    const encodedQuery = encodeURIComponent(searchQuery);
+    const googleUrl = `https://www.google.com/search?q=${encodedQuery}`;
+
+    try {
+      // Use Electron's shell to open the URL in the default browser
+      await window.electronAPI.openExternal(googleUrl);
+
+      // Hide the Ctrl window after opening the search
+      window.electronAPI.hideWindow();
+    } catch (error) {
+      console.error("Failed to open Google search:", error);
+    }
+  }
+
+  async handleChatGPTSearch(searchQuery) {
+    if (!searchQuery) {
+      console.error("No search query provided for ChatGPT search");
+      return;
+    }
+
+    console.log("Opening ChatGPT with query:", searchQuery);
+
+    // Encode the search query for URL
+    const encodedQuery = encodeURIComponent(searchQuery);
+    const chatgptUrl = `https://chat.openai.com/?q=${encodedQuery}`;
+
+    try {
+      // Use Electron's shell to open the URL in the default browser
+      await window.electronAPI.openExternal(chatgptUrl);
+
+      // Hide the Ctrl window after opening ChatGPT
+      window.electronAPI.hideWindow();
+    } catch (error) {
+      console.error("Failed to open ChatGPT:", error);
+    }
+  }
+
+  openAddSnippetApp() {
+    console.log("Opening Add Snippet form");
+    this.showAddSnippetForm();
+  }
+
+  openAddDocumentApp() {
+    console.log("Opening Add Document form");
+    this.showAddDocumentForm();
+  }
+
+  openAddBookmarkApp() {
+    console.log("Opening Add Bookmark form");
+    this.showAddBookmarkForm();
+  }
+
+  showHelpDialog() {
+    const helpText = `
+    <div class="help-dialog">
+      <h3>Ctrl - Quick Launcher</h3>
+      <div class="help-section">
+        <h4>Smart Shortcuts:</h4>
+        <p><strong>s</strong> - Settings</p>
+        <p><strong>e</strong> - Emoji Picker</p>
+        <p><strong>sum</strong> - Calculator</p>
+        <p><strong>h</strong> - Help</p>
+        <p><strong>r</strong> - Reload Data</p>
+        <p><strong>q</strong> - Quit</p>
+      </div>
+      <div class="help-section">
+        <h4>Add Content:</h4>
+        <p><strong>add-snippet</strong> - New Code Snippet</p>
+        <p><strong>add-document</strong> - New Document Link</p>
+        <p><strong>add-bookmark</strong> - New Website Bookmark</p>
+      </div>
+      <div class="help-section">
+        <h4>Keyboard Shortcuts:</h4>
+        <p><strong>↑/↓</strong> - Navigate results</p>
+        <p><strong>Enter</strong> - Select result</p>
+        <p><strong>Esc</strong> - Close/Back</p>
+        <p><strong>Cmd/Ctrl + ,</strong> - Settings</p>
+        <p><strong>Ctrl + /</strong> - Focus search bar</p>
+      </div>
+      <div class="help-section">
+        <h4>Emoji Mode:</h4>
+        <p><strong>:</strong> - Enter emoji mode</p>
+        <p><strong>:search</strong> - Search emojis</p>
+      </div>
+      <div class="help-section">
+        <h4>External Search:</h4>
+        <p>🔍 <strong>Google Search</strong> - Available for any query</p>
+        <p>🤖 <strong>ChatGPT Search</strong> - Available for any query</p>
+      </div>
+    </div>
+    `;
+
+    this.resultsContainer.innerHTML = helpText;
+  }
+
+  showSumCalculator() {
+    const sumCalculatorHTML = `
+      <div class="sum-calculator-widget">
+        <div class="calculator-header">
+          <h3>Sum Calculator</h3>
+          <p>Enter numbers separated by spaces, commas, or new lines</p>
+        </div>
+        
+        <div class="calculator-input-section">
+          <textarea 
+            id="sum-numbers-input" 
+            class="sum-input" 
+            placeholder="e.g., 1, 2, 3, 4, 5 or 1 2 3 4 5"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="calculator-result">
+          <div class="result-display">
+            <span class="result-label">Sum:</span>
+            <span id="sum-result" class="result-value">0</span>
+          </div>
+          <div id="sum-details" class="calculation-details"></div>
+        </div>
+
+        <div class="calculator-actions">
+          <button id="sum-calculate-btn" class="action-btn primary">Calculate</button>
+          <button id="sum-clear-btn" class="action-btn">Clear</button>
+          <button id="sum-back-btn" class="action-btn">Back</button>
+        </div>
+      </div>
+    `;
+
+    this.resultsContainer.innerHTML = sumCalculatorHTML;
+    this.setupSumCalculatorEvents();
+
+    // Focus the input
+    setTimeout(() => {
+      document.getElementById("sum-numbers-input").focus();
+    }, 100);
+  }
+
+  setupSumCalculatorEvents() {
+    const input = document.getElementById("sum-numbers-input");
+    const calculateBtn = document.getElementById("sum-calculate-btn");
+    const clearBtn = document.getElementById("sum-clear-btn");
+    const backBtn = document.getElementById("sum-back-btn");
+
+    // Calculate on button click
+    calculateBtn.addEventListener("click", () => this.calculateSum());
+
+    // Calculate on Enter key
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.ctrlKey) {
+        e.preventDefault();
+        this.calculateSum();
+      } else if (e.key === "Escape") {
+        this.exitSumCalculator();
+      }
+    });
+
+    // Clear button
+    clearBtn.addEventListener("click", () => this.clearSumCalculator());
+
+    // Back button
+    backBtn.addEventListener("click", () => this.exitSumCalculator());
+
+    // Auto-calculate on input
+    let timeout;
+    input.addEventListener("input", () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => this.calculateSum(), 300);
+    });
+  }
+
+  calculateSum() {
+    const input = document.getElementById("sum-numbers-input");
+    const resultSpan = document.getElementById("sum-result");
+    const detailsDiv = document.getElementById("sum-details");
+
+    try {
+      const inputText = input.value.trim();
+
+      if (!inputText) {
+        resultSpan.textContent = "0";
+        detailsDiv.textContent = "Enter numbers to calculate";
+        return;
+      }
+
+      // Parse numbers from various separators
+      const numbers = inputText
+        .split(/[,\s\n\r]+/)
+        .map((str) => str.trim())
+        .filter((str) => str !== "")
+        .map((str) => {
+          const num = parseFloat(str);
+          if (isNaN(num)) {
+            throw new Error(`"${str}" is not a valid number`);
+          }
+          return num;
+        });
+
+      if (numbers.length === 0) {
+        resultSpan.textContent = "0";
+        detailsDiv.textContent = "No valid numbers found";
+        return;
+      }
+
+      const sum = numbers.reduce((acc, num) => acc + num, 0);
+
+      // Update result
+      resultSpan.textContent = sum.toLocaleString();
+
+      // Show details
+      const details = [
+        `Numbers: ${numbers.join(" + ")}`,
+        `Count: ${numbers.length}`,
+        `Average: ${(sum / numbers.length).toFixed(2)}`,
+      ].join(" • ");
+
+      detailsDiv.textContent = details;
+    } catch (error) {
+      resultSpan.textContent = "Error";
+      detailsDiv.textContent = error.message;
+    }
+  }
+
+  clearSumCalculator() {
+    const input = document.getElementById("sum-numbers-input");
+    const resultSpan = document.getElementById("sum-result");
+    const detailsDiv = document.getElementById("sum-details");
+
+    input.value = "";
+    resultSpan.textContent = "0";
+    detailsDiv.textContent = "";
+    input.focus();
+  }
+
+  exitSumCalculator() {
+    this.showEmptyState();
+    this.focusSearch();
+  }
+
+  showAddSnippetForm() {
+    const addSnippetHTML = `
+      <div class="add-form-widget">
+        <div class="form-header">
+          <h3>📝 Add Code Snippet</h3>
+          <p>Save your code snippets for quick access</p>
+        </div>
+        
+        <div class="form-content">
+          <div class="form-group">
+            <label for="snippet-content">Code Snippet *</label>
+            <textarea 
+              id="snippet-content" 
+              class="form-textarea" 
+              placeholder="Paste your code snippet here..."
+              rows="8"
+              required
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button id="save-snippet-btn" class="action-btn primary">💾 Save Snippet</button>
+          <button id="clear-snippet-btn" class="action-btn">🗑️ Clear</button>
+          <button id="back-snippet-btn" class="action-btn">← Back</button>
+        </div>
+        
+        <div id="snippet-status" class="status-message hidden"></div>
+      </div>
+    `;
+
+    this.resultsContainer.innerHTML = addSnippetHTML;
+    this.setupAddSnippetEvents();
+
+    // Focus the textarea
+    setTimeout(() => {
+      document.getElementById("snippet-content").focus();
+    }, 100);
+  }
+
+  setupAddSnippetEvents() {
+    const contentTextarea = document.getElementById("snippet-content");
+    const saveBtn = document.getElementById("save-snippet-btn");
+    const clearBtn = document.getElementById("clear-snippet-btn");
+    const backBtn = document.getElementById("back-snippet-btn");
+
+    // Save button
+    saveBtn.addEventListener("click", () => this.saveSnippet());
+
+    // Clear button
+    clearBtn.addEventListener("click", () => this.clearSnippetForm());
+
+    // Back button
+    backBtn.addEventListener("click", () => this.exitAddForm());
+
+    // Keyboard shortcuts
+    contentTextarea.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        this.saveSnippet();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        this.saveSnippet();
+      } else if (e.key === "Escape") {
+        this.exitAddForm();
+      }
+    });
+  }
+
+  async saveSnippet() {
+    const contentTextarea = document.getElementById("snippet-content");
+    const saveBtn = document.getElementById("save-snippet-btn");
+    const statusDiv = document.getElementById("snippet-status");
+
+    const content = contentTextarea.value.trim();
+
+    if (!content) {
+      this.showFormMessage(
+        "snippet-status",
+        "Please enter snippet content",
+        "error"
+      );
+      contentTextarea.focus();
+      return;
+    }
+
+    try {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "💾 Saving...";
+
+      // Save to database using Electron API
+      const result = await window.electronAPI.addSnippet(content);
+
+      if (result.success) {
+        this.showFormMessage(
+          "snippet-status",
+          "Snippet saved successfully! 🎉",
+          "success"
+        );
+
+        // Reload data to update search
+        await this.loadData();
+
+        // Clear form after successful save
+        setTimeout(() => {
+          this.clearSnippetForm();
+        }, 1500);
+      } else {
+        this.showFormMessage(
+          "snippet-status",
+          `Failed to save: ${result.error}`,
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Failed to save snippet:", error);
+      this.showFormMessage(
+        "snippet-status",
+        "Failed to save snippet. Please try again.",
+        "error"
+      );
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "💾 Save Snippet";
+    }
+  }
+
+  clearSnippetForm() {
+    const contentTextarea = document.getElementById("snippet-content");
+    contentTextarea.value = "";
+    this.hideFormMessage("snippet-status");
+    contentTextarea.focus();
+  }
+
+  showAddDocumentForm() {
+    const addDocumentHTML = `
+      <div class="add-form-widget">
+        <div class="form-header">
+          <h3>📄 Add Document</h3>
+          <p>Save document links for quick access</p>
+        </div>
+        
+        <div class="form-content">
+          <div class="form-group">
+            <label for="document-title">Document Title *</label>
+            <input 
+              type="text" 
+              id="document-title" 
+              class="form-input" 
+              placeholder="e.g., Project Requirements, API Documentation"
+              required
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="document-link">Document Link *</label>
+            <input 
+              type="url" 
+              id="document-link" 
+              class="form-input" 
+              placeholder="https://example.com/document.pdf"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button id="save-document-btn" class="action-btn primary">💾 Save Document</button>
+          <button id="clear-document-btn" class="action-btn">🗑️ Clear</button>
+          <button id="back-document-btn" class="action-btn">← Back</button>
+        </div>
+        
+        <div id="document-status" class="status-message hidden"></div>
+      </div>
+    `;
+
+    this.resultsContainer.innerHTML = addDocumentHTML;
+    this.setupAddDocumentEvents();
+
+    // Focus the title input
+    setTimeout(() => {
+      document.getElementById("document-title").focus();
+    }, 100);
+  }
+
+  setupAddDocumentEvents() {
+    const titleInput = document.getElementById("document-title");
+    const linkInput = document.getElementById("document-link");
+    const saveBtn = document.getElementById("save-document-btn");
+    const clearBtn = document.getElementById("clear-document-btn");
+    const backBtn = document.getElementById("back-document-btn");
+
+    // Save button
+    saveBtn.addEventListener("click", () => this.saveDocument());
+
+    // Clear button
+    clearBtn.addEventListener("click", () => this.clearDocumentForm());
+
+    // Back button
+    backBtn.addEventListener("click", () => this.exitAddForm());
+
+    // Keyboard shortcuts for both inputs
+    [titleInput, linkInput].forEach((input) => {
+      input.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+          e.preventDefault();
+          this.saveDocument();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          this.saveDocument();
+        } else if (e.key === "Escape") {
+          this.exitAddForm();
+        }
+      });
+    });
+  }
+
+  async saveDocument() {
+    const titleInput = document.getElementById("document-title");
+    const linkInput = document.getElementById("document-link");
+    const saveBtn = document.getElementById("save-document-btn");
+
+    const title = titleInput.value.trim();
+    const link = linkInput.value.trim();
+
+    if (!title) {
+      this.showFormMessage(
+        "document-status",
+        "Please enter document title",
+        "error"
+      );
+      titleInput.focus();
+      return;
+    }
+
+    if (!link) {
+      this.showFormMessage(
+        "document-status",
+        "Please enter document link",
+        "error"
+      );
+      linkInput.focus();
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(link);
+    } catch (error) {
+      this.showFormMessage(
+        "document-status",
+        "Please enter a valid URL",
+        "error"
+      );
+      linkInput.focus();
+      return;
+    }
+
+    try {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "💾 Saving...";
+
+      // Save to database using Electron API (matches database schema: title, link)
+      const result = await window.electronAPI.addDocument(title, link);
+
+      if (result.success) {
+        this.showFormMessage(
+          "document-status",
+          "Document saved successfully! 🎉",
+          "success"
+        );
+
+        // Reload data to update search
+        await this.loadData();
+
+        // Clear form after successful save
+        setTimeout(() => {
+          this.clearDocumentForm();
+        }, 1500);
+      } else {
+        this.showFormMessage(
+          "document-status",
+          `Failed to save: ${result.error}`,
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Failed to save document:", error);
+      this.showFormMessage(
+        "document-status",
+        "Failed to save document. Please try again.",
+        "error"
+      );
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "💾 Save Document";
+    }
+  }
+
+  clearDocumentForm() {
+    const titleInput = document.getElementById("document-title");
+    const linkInput = document.getElementById("document-link");
+
+    titleInput.value = "";
+    linkInput.value = "";
+    this.hideFormMessage("document-status");
+    titleInput.focus();
+  }
+
+  showAddBookmarkForm() {
+    const addBookmarkHTML = `
+      <div class="add-form-widget">
+        <div class="form-header">
+          <h3>🔖 Add Bookmark</h3>
+          <p>Save website bookmarks for quick access</p>
+        </div>
+        
+        <div class="form-content">
+          <div class="form-group">
+            <label for="bookmark-title">Bookmark Title *</label>
+            <input 
+              type="text" 
+              id="bookmark-title" 
+              class="form-input" 
+              placeholder="e.g., GitHub, Stack Overflow, Documentation"
+              required
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="bookmark-url">Website URL *</label>
+            <input 
+              type="url" 
+              id="bookmark-url" 
+              class="form-input" 
+              placeholder="https://example.com"
+              required
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="bookmark-description">Description (Optional)</label>
+            <textarea 
+              id="bookmark-description" 
+              class="form-textarea" 
+              placeholder="Brief description of this bookmark..."
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button id="save-bookmark-btn" class="action-btn primary">💾 Save Bookmark</button>
+          <button id="clear-bookmark-btn" class="action-btn">🗑️ Clear</button>
+          <button id="back-bookmark-btn" class="action-btn">← Back</button>
+        </div>
+        
+        <div id="bookmark-status" class="status-message hidden"></div>
+      </div>
+    `;
+
+    this.resultsContainer.innerHTML = addBookmarkHTML;
+    this.setupAddBookmarkEvents();
+
+    // Focus the title input
+    setTimeout(() => {
+      document.getElementById("bookmark-title").focus();
+    }, 100);
+  }
+
+  setupAddBookmarkEvents() {
+    const titleInput = document.getElementById("bookmark-title");
+    const urlInput = document.getElementById("bookmark-url");
+    const descriptionTextarea = document.getElementById("bookmark-description");
+    const saveBtn = document.getElementById("save-bookmark-btn");
+    const clearBtn = document.getElementById("clear-bookmark-btn");
+    const backBtn = document.getElementById("back-bookmark-btn");
+
+    // Save button
+    saveBtn.addEventListener("click", () => this.saveBookmark());
+
+    // Clear button
+    clearBtn.addEventListener("click", () => this.clearBookmarkForm());
+
+    // Back button
+    backBtn.addEventListener("click", () => this.exitAddForm());
+
+    // Keyboard shortcuts for all inputs
+    [titleInput, urlInput, descriptionTextarea].forEach((input) => {
+      input.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+          e.preventDefault();
+          this.saveBookmark();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          this.saveBookmark();
+        } else if (e.key === "Escape") {
+          this.exitAddForm();
+        }
+      });
+    });
+  }
+
+  async saveBookmark() {
+    const titleInput = document.getElementById("bookmark-title");
+    const urlInput = document.getElementById("bookmark-url");
+    const descriptionTextarea = document.getElementById("bookmark-description");
+    const saveBtn = document.getElementById("save-bookmark-btn");
+
+    const title = titleInput.value.trim();
+    const url = urlInput.value.trim();
+    const description = descriptionTextarea.value.trim();
+
+    if (!title) {
+      this.showFormMessage(
+        "bookmark-status",
+        "Please enter bookmark title",
+        "error"
+      );
+      titleInput.focus();
+      return;
+    }
+
+    if (!url) {
+      this.showFormMessage(
+        "bookmark-status",
+        "Please enter website URL",
+        "error"
+      );
+      urlInput.focus();
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(url);
+    } catch (error) {
+      this.showFormMessage(
+        "bookmark-status",
+        "Please enter a valid URL",
+        "error"
+      );
+      urlInput.focus();
+      return;
+    }
+
+    try {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "💾 Saving...";
+
+      // Save to database using Electron API (matches database schema: title, url, description)
+      const result = await window.electronAPI.addBookmark(
+        title,
+        url,
+        description
+      );
+
+      if (result.success) {
+        this.showFormMessage(
+          "bookmark-status",
+          "Bookmark saved successfully! 🎉",
+          "success"
+        );
+
+        // Reload data to update search
+        await this.loadData();
+
+        // Clear form after successful save
+        setTimeout(() => {
+          this.clearBookmarkForm();
+        }, 1500);
+      } else {
+        this.showFormMessage(
+          "bookmark-status",
+          `Failed to save: ${result.error}`,
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Failed to save bookmark:", error);
+      this.showFormMessage(
+        "bookmark-status",
+        "Failed to save bookmark. Please try again.",
+        "error"
+      );
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "💾 Save Bookmark";
+    }
+  }
+
+  clearBookmarkForm() {
+    const titleInput = document.getElementById("bookmark-title");
+    const urlInput = document.getElementById("bookmark-url");
+    const descriptionTextarea = document.getElementById("bookmark-description");
+
+    titleInput.value = "";
+    urlInput.value = "";
+    descriptionTextarea.value = "";
+    this.hideFormMessage("bookmark-status");
+    titleInput.focus();
+  }
+
+  exitAddForm() {
+    this.showEmptyState();
+    this.focusSearch();
+  }
+
+  showFormMessage(elementId, message, type) {
+    const statusElement = document.getElementById(elementId);
+    if (statusElement) {
+      statusElement.textContent = message;
+      statusElement.className = `status-message ${type}`;
+      statusElement.classList.remove("hidden");
+
+      // Auto-hide success messages
+      if (type === "success") {
+        setTimeout(() => {
+          this.hideFormMessage(elementId);
+        }, 3000);
+      }
+    }
+  }
+
+  hideFormMessage(elementId) {
+    const statusElement = document.getElementById(elementId);
+    if (statusElement) {
+      statusElement.classList.add("hidden");
+    }
+  }
+
+  enterEmojiMode() {
+    this.searchInput.placeholder = "Search emojis... (ESC to go back)";
+    this.searchInput.value = "";
+    const results = this.emojiPicker.enterEmojiMode();
+    this.displayResults(results);
+    this.focusSearch();
+  }
+
+  exitEmojiMode() {
+    this.emojiPicker.exitEmojiMode();
+    this.searchInput.placeholder =
+      "Fuzzy search snippets, documents, and bookmarks...";
+    this.searchInput.value = "";
+    this.showEmptyState();
+    this.focusSearch();
+  }
+
+  showEmptyState() {
+    this.resultsContainer.innerHTML = `
+      <div class="empty-state">
+        <i data-lucide="search" class="empty-icon"></i>
+        <p>Start typing to search...</p>
+        <div style="margin-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">
+          <p>⚡ <strong>s</strong> = Settings • <strong>e</strong> = Emojis • <strong>sum</strong> = Calculator</p>
+          <p>➕ <strong>add-snippet</strong> = New Snippet • <strong>add-document</strong> = New Document • <strong>add-bookmark</strong> = New Bookmark</p>
+          <p>💡 Type ":" to browse emoji categories</p>
+          <p>🔍 Search for snippets, documents, or bookmarks</p>
+        </div>
+      </div>
+    `;
+
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
+  }
+
+  showNoResults() {
+    this.resultsContainer.innerHTML = `
+      <div class="empty-state">
+        <i data-lucide="search-x" class="empty-icon"></i>
+        <p>No results found</p>
+        <div style="margin-top: 16px; font-size: 12px; color: #9ca3af;">
+          <p>💡 Try different search terms</p>
+        </div>
+      </div>
+    `;
+
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
   }
 }
 
 // Initialize the app
 document.addEventListener("DOMContentLoaded", () => {
-  new CtrlSearch();
+  console.log("DOM Content Loaded, initializing CtrlSearch...");
+  try {
+    new CtrlSearch();
+  } catch (error) {
+    console.error("Error initializing CtrlSearch:", error);
+  }
 });

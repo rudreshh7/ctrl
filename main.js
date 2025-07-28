@@ -14,6 +14,9 @@ const {
   getAllDocuments,
   addDocument,
   deleteDocument,
+  getAllBookmarks,
+  addBookmark,
+  deleteBookmark,
 } = require("./db/database");
 
 class CtrlApp {
@@ -25,8 +28,8 @@ class CtrlApp {
 
   createMainWindow() {
     this.mainWindow = new BrowserWindow({
-      width: 640,
-      height: 400,
+      width: 720,
+      height: 480,
       frame: false,
       transparent: true,
       alwaysOnTop: true,
@@ -127,6 +130,19 @@ class CtrlApp {
 
     ipcMain.handle("delete-document", async (event, id) => {
       return deleteDocument(id);
+    });
+
+    // Bookmark handlers
+    ipcMain.handle("get-bookmarks", async () => {
+      return getAllBookmarks();
+    });
+
+    ipcMain.handle("add-bookmark", async (event, title, url, description) => {
+      return addBookmark(title, url, description);
+    });
+
+    ipcMain.handle("delete-bookmark", async (event, id) => {
+      return deleteBookmark(id);
     });
 
     // Utility handlers
