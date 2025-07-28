@@ -9,6 +9,21 @@
 </head>
 <body>
     <div class="settings-container">
+        <!-- Restart Notification -->
+        <div class="restart-notification" id="restartNotification">
+            <div class="restart-notification-content">
+                <div class="restart-notification-title">Changes Made</div>
+                <div class="restart-notification-subtitle">Restart to apply changes</div>
+            </div>
+            <button class="restart-button" id="restartButton">
+                <i data-lucide="refresh-cw" style="width: 12px; height: 12px; margin-right: 4px;"></i>
+                Restart
+            </button>
+            <button class="close-notification" id="closeNotification">
+                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+            </button>
+        </div>
+
         <header class="settings-header">
             <h1>Ctrl Preferences</h1>
             <div class="header-tabs">

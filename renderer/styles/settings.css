@@ -310,3 +310,80 @@ body {
     font-size: 14px;
     font-weight: 400;
 }
+
+.restart-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #007aff;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000;
+    transform: translateY(-100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.restart-notification.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.restart-notification-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.restart-notification-title {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.restart-notification-subtitle {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.restart-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    color: white;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.restart-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.close-notification {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.close-notification:hover {
+    opacity: 1;
+}

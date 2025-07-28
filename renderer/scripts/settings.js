@@ -3,6 +3,7 @@ class CtrlSettings {
     this.snippets = [];
     this.documents = [];
     this.currentTab = "general";
+    this.hasChanges = false;
 
     this.init();
   }
@@ -12,6 +13,7 @@ class CtrlSettings {
     this.bindEvents();
     this.renderSnippets();
     this.renderDocuments();
+    this.setupRestartNotification();
   }
 
   async loadData() {
@@ -89,6 +91,42 @@ class CtrlSettings {
     });
   }
 
+  setupRestartNotification() {
+    // Restart button event
+    document.getElementById("restartButton").addEventListener("click", () => {
+      this.restartApp();
+    });
+
+    // Close notification button
+    document
+      .getElementById("closeNotification")
+      .addEventListener("click", () => {
+        this.hideRestartNotification();
+      });
+  }
+
+  showRestartNotification() {
+    if (!this.hasChanges) {
+      this.hasChanges = true;
+      const notification = document.getElementById("restartNotification");
+      notification.classList.add("show");
+    }
+  }
+
+  hideRestartNotification() {
+    const notification = document.getElementById("restartNotification");
+    notification.classList.remove("show");
+    this.hasChanges = false;
+  }
+
+  async restartApp() {
+    try {
+      await window.electronAPI.restartApp();
+    } catch (error) {
+      console.error("Failed to restart app:", error);
+    }
+  }
+
   switchTab(tab) {
     this.currentTab = tab;
 
@@ -132,6 +170,7 @@ class CtrlSettings {
         await this.loadData();
         this.renderSnippets();
         this.hideSnippetForm();
+        this.showRestartNotification();
       } else {
         alert("Failed to save snippet: " + result.error);
       }
@@ -151,6 +190,7 @@ class CtrlSettings {
       if (result.success) {
         await this.loadData();
         this.renderSnippets();
+        this.showRestartNotification();
       } else {
         alert("Failed to delete snippet");
       }
@@ -261,6 +301,7 @@ class CtrlSettings {
         await this.loadData();
         this.renderDocuments();
         this.hideDocumentForm();
+        this.showRestartNotification();
       } else {
         alert("Failed to save document: " + result.error);
       }
@@ -280,6 +321,7 @@ class CtrlSettings {
       if (result.success) {
         await this.loadData();
         this.renderDocuments();
+        this.showRestartNotification();
       } else {
         alert("Failed to delete document");
       }

@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   hideWindow: () => ipcRenderer.invoke("hide-window"),
   openSettings: () => ipcRenderer.invoke("open-settings"),
   quitApp: () => ipcRenderer.invoke("quit-app"),
+  restartApp: () => ipcRenderer.invoke("restart-app"),
 
   // Platform information
   platform: process.platform,

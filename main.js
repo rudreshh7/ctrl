@@ -148,6 +148,11 @@ class CtrlApp {
       this.isQuitting = true;
       app.quit();
     });
+
+    ipcMain.handle("restart-app", async () => {
+      app.relaunch();
+      app.quit();
+    });
   }
 
   async initialize() {
