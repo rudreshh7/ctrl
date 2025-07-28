@@ -1,0 +1,19 @@
+{
+  "name": "ctrl",
+  "version": "1.0.0",
+  "description": "shortcut to anything",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "rudr",
+  "license": "ISC",
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "electron": "^37.2.4"
+  }
+}

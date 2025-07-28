@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ctrl</title>
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="search-container">
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                </svg>
+                <input type="text" id="searchInput" placeholder="Search snippets and documents..." autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+
+        <div class="results-container" id="resultsContainer">
+            <div class="empty-state">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <p>Start typing to search...</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="shortcuts">
+                <span class="shortcut">
+                    <kbd>↑</kbd><kbd>↓</kbd> Navigate
+                </span>
+                <span class="shortcut">
+                    <kbd>Enter</kbd> Select
+                </span>
+                <span class="shortcut">
+                    <kbd>Esc</kbd> Close
+                </span>
+                <span class="shortcut">
+                    Type "settings" to configure
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/index.js"></script>
+</body>
+</html>
