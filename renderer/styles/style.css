@@ -1,3 +1,4 @@
+/* --- Base & Reset --- */
 * {
     margin: 0;
     padding: 0;
@@ -5,91 +6,92 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-    background: transparent; /* Transparent background for frameless window */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    background: transparent; /* For desktop widget-style apps */
     overflow: hidden;
-    -webkit-app-region: drag;
-    padding: 8px; /* Add padding to create visual border around the rounded window */
+    -webkit-app-region: drag; /* Allows dragging the window */
+    padding: 10px; /* Provides a small gap around the main container */
+    font-smooth: antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
-    width: 100%;
-    height: calc(100vh - 16px); /* Account for body padding */
-    background: rgba(255, 255, 255, 0.95); /* Slightly transparent white for glass effect */
-    backdrop-filter: blur(20px); /* Glass morphism effect */
-    -webkit-backdrop-filter: blur(20px); /* WebKit prefix for Safari */
-    border-radius: 24px; /* Increased roundness */
-    border: 1px solid rgba(229, 229, 231, 0.3); /* Semi-transparent border */
-    display: flex;
-    flex-direction: column;
-    box-shadow: 
-        0 20px 40px -12px rgba(0, 0, 0, 0.25),
-        0 8px 16px -4px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2); /* Enhanced shadow with inset highlight */
-    overflow: hidden; /* Clip content within rounded corners */
-    -electron-corner-smoothing: system-ui; /* Electron-specific corner smoothing */
-}
+            width: 100%;
+            height: calc(100vh - 20px);
+            background: rgba(248, 249, 250, 0.98); /* Brighter, more opaque background */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 12px; /* Slightly reduced radius for a sharper look */
+            border: 1px solid rgba(0, 0, 0, 0.07);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
 
+/* --- Search Input Area --- */
+/* --- Search Input Area --- */
 .search-container {
-    padding: 20px 20px 0 20px;
+    padding: 12px;
     -webkit-app-region: no-drag;
 }
 
+/* Flex container for icon + input */
 .search-box {
-    position: relative;
     display: flex;
     align-items: center;
-    background: rgba(245, 245, 247, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(229, 229, 231, 0.4);
-    border-radius: 18px; /* More rounded */
-    padding: 0 16px;
-    transition: all 0.3s ease;
-    -electron-corner-smoothing: system-ui;
+    background: #f8f9fa; /* optional light background */
+    border-radius: 8px;
+    padding: 10px 14px;
+    gap: 10px; /* space between icon and input */
+    width: 100%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* subtle shadow like Raycast */
 }
 
-.search-box:focus-within {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 122, 255, 0.6);
-    box-shadow: 
-        0 0 0 4px rgba(0, 122, 255, 0.15),
-        0 8px 16px -4px rgba(0, 122, 255, 0.1);
-    transform: translateY(-1px); /* Subtle lift effect */
-}
-
+/* Icon styling */
 .search-icon {
-    width: 18px;
-    height: 18px;
-    color: #86868b;
-    margin-right: 12px;
+    width: 20px;
+    height: 20px;
+    color: #868e96;
     flex-shrink: 0;
 }
 
+/* Input field */
 #searchInput {
-    flex: 1;
+    width: 100%;
     border: none;
     background: transparent;
-    color: #1d1d1f;
-    font-size: 16px;
-    padding: 16px 0;
-    outline: none;
+    color: #212529;
+    font-size: 18px;
     font-weight: 400;
+    outline: none;
 }
 
+/* Placeholder */
 #searchInput::placeholder {
-    color: #86868b;
+    color: #adb5bd;
 }
 
+
+
+/* --- Divider --- */
+.divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.07);
+    margin: 0 4px;
+}
+
+/* --- Results --- */
 .results-container {
     flex: 1;
-    padding: 16px 20px;
+    padding: 8px;
     overflow-y: auto;
-    -webkit-app-region: no-drag;
+    -webkit-app-region: no-drag; /* Allow scrolling */
 }
 
 .results-container::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
 }
 
 .results-container::-webkit-scrollbar-track {
@@ -97,24 +99,21 @@ body {
 }
 
 .results-container::-webkit-scrollbar-thumb {
-    background: #d1d5db;
-    border-radius: 3px;
+    background: #ced4da;
+    border-radius: 2px;
 }
 
+/* --- Empty State --- */
 .empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #6b7280;
-}
-
-.empty-icon {
-    width: 48px;
-    height: 48px;
-    margin-bottom: 12px;
-    opacity: 0.5;
+    color: #868e96;
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
 }
 
 .empty-state p {
@@ -122,38 +121,40 @@ body {
     font-weight: 500;
 }
 
+.empty-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+/* --- Result Item --- */
 .result-item {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
-    margin-bottom: 4px;
-    border-radius: 16px; /* More rounded */
-    cursor: pointer;
-    transition: all 0.25s ease;
-    background: transparent;
-    border: 1px solid transparent;
-    -electron-corner-smoothing: system-ui;
+    padding: 10px;
+    border-radius: 8px; /* Sharper corners for items */
+    cursor: default; /* Use default cursor as is common in command palettes */
+    transition: background 0.15s ease;
 }
 
-.result-item:hover,
 .result-item.selected {
-    background: rgba(248, 250, 252, 0.8);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-color: rgba(226, 232, 240, 0.6);
-    transform: translateY(-2px) scale(1.02); /* More pronounced lift and scale */
-    box-shadow: 
-        0 8px 20px -6px rgba(0, 0, 0, 0.15),
-        0 4px 8px -2px rgba(0, 0, 0, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.result-item:not(.selected):hover {
+    background: rgba(0, 0, 0, 0.02); /* Very subtle hover for non-selected items */
 }
 
 .result-icon {
     width: 20px;
     height: 20px;
     margin-right: 12px;
+    color: #495057;
     flex-shrink: 0;
-    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .result-content {
@@ -162,38 +163,38 @@ body {
 }
 
 .result-title {
-    color: #1f2937;
+    color: #343a40;
     font-size: 14px;
     font-weight: 500;
-    margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+/* Highlight for matched text */
+mark {
+    background: transparent;
+    color: #1971c2;
+    font-weight: 600;
+    padding: 0;
+    border-radius: 0;
+}
+
 .result-subtitle {
-    color: #6b7280;
+    color: #868e96;
     font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+/* --- Simplified Result Type --- */
 .result-type {
-    padding: 3px 8px;
-    background: rgba(243, 244, 246, 0.8);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    color: #6366f1;
-    font-size: 10px;
-    font-weight: 600;
-    border-radius: 12px; /* Fully rounded pill shape */
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-left: 8px;
+    color: #868e96;
+    font-size: 12px;
+    font-weight: 500;
+    margin-left: 16px;
     flex-shrink: 0;
-    border: 1px solid rgba(99, 102, 241, 0.1);
-    -electron-corner-smoothing: system-ui;
 }
 
 .result-type.document {
@@ -237,13 +238,13 @@ body {
     color: #ffffff;
 }
 
+/* --- Footer & Shortcuts (Simplified) --- */
 .footer {
-    padding: 16px 24px;
-    border-top: 1px solid #e5e5e7;
+    padding: 8px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
     -webkit-app-region: no-drag;
-    background: #f5f5f7;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
+    display: flex;
+    justify-content: flex-end; /* Align to the right */
 }
 
 .shortcuts {
@@ -257,31 +258,20 @@ body {
     display: flex;
     align-items: center;
     gap: 4px;
-    color: #6b7280;
+    color: #868e96;
     font-size: 11px;
     font-weight: 500;
 }
 
 kbd {
     background: #ffffff;
-    border: 1px solid #d1d5db;
+    border: 1px solid #dee2e6;
+    border-bottom-width: 2px;
     border-radius: 4px;
-    padding: 2px 6px;
+    padding: 2px 5px;
     font-size: 10px;
-    font-weight: 600;
-    color: #374151;
-    min-width: 20px;
-    text-align: center;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-/* Fuzzy search highlights */
-mark {
-    background: #fef3c7;
-    color: #92400e;
-    padding: 1px 2px;
-    border-radius: 2px;
-    font-weight: 600;
+    font-family: inherit;
+    color: #495057;
 }
 
 /* Raycast-style dropdown styling */
@@ -317,7 +307,7 @@ mark {
     background: #fff4e6;
     border-color: #fb923c;
     transform: translateY(-1px);
-    box-shadow: 
+    box-shadow:
         0 4px 12px -2px rgba(251, 146, 60, 0.15),
         0 2px 6px -1px rgba(251, 146, 60, 0.1);
 }
@@ -509,7 +499,7 @@ mark {
     outline: none;
     border-color: rgba(0, 122, 255, 0.6);
     background: rgba(255, 255, 255, 0.9);
-    box-shadow: 
+    box-shadow:
         0 0 0 4px rgba(0, 122, 255, 0.15),
         0 4px 12px -2px rgba(0, 122, 255, 0.1);
     transform: translateY(-1px);
@@ -577,7 +567,7 @@ mark {
 
 .action-btn:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 
+    box-shadow:
         0 8px 16px -4px rgba(0, 0, 0, 0.15),
         0 4px 8px -2px rgba(0, 0, 0, 0.08);
     background: rgba(255, 255, 255, 0.9);
@@ -591,147 +581,251 @@ mark {
 
 .action-btn.primary:hover {
     background: linear-gradient(135deg, #0056cc 0%, #003d99 100%);
-    box-shadow: 
+    box-shadow:
         0 8px 20px -6px rgba(0, 122, 255, 0.4),
         0 4px 8px -2px rgba(0, 122, 255, 0.2);
 }
 
-/* Add Form Styles */
+/* Raycast-inspired Add Snippet Form Styles */
+
 .add-form-widget {
-    padding: 24px;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius: 20px; /* More rounded */
-    border: 1px solid rgba(229, 229, 231, 0.3);
-    max-width: 600px;
-    margin: 0 auto;
-    box-shadow: 
-        0 12px 28px -8px rgba(0, 0, 0, 0.1),
-        0 6px 14px -4px rgba(0, 0, 0, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    -electron-corner-smoothing: system-ui;
+  background: linear-gradient(135deg, rgba(30, 30, 35, 0.95) 0%, rgba(25, 25, 30, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 16px;
+  width: 100%;
+  max-width: 680px;
+  height: fit-content;
+  max-height: 400px;
+  margin: 0 auto;
+  box-shadow: 
+    0 12px 24px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-.form-header {
-    text-align: center;
-    margin-bottom: 24px;
-}
-
-.form-header h3 {
-    font-size: 20px;
-    font-weight: 600;
-    color: #1d1d1f;
-    margin-bottom: 8px;
-}
-
-.form-header p {
-    font-size: 14px;
-    color: #86868b;
+.add-form-widget::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
 .form-content {
-    margin-bottom: 24px;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    font-weight: 500;
-    color: #1d1d1f;
-    margin-bottom: 8px;
-    font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .form-input,
 .form-textarea {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid rgba(229, 229, 231, 0.4);
-    border-radius: 16px; /* More rounded */
-    font-size: 14px;
-    font-family: inherit;
-    background: rgba(245, 245, 247, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: all 0.25s ease;
-    resize: vertical;
-    -electron-corner-smoothing: system-ui;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .form-input:focus,
 .form-textarea:focus {
-    outline: none;
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 122, 255, 0.6);
-    box-shadow: 
-        0 0 0 4px rgba(0, 122, 255, 0.15),
-        0 4px 12px -2px rgba(0, 122, 255, 0.1);
-    transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 0 0 3px rgba(255, 255, 255, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.form-input:hover:not(:focus),
+.form-textarea:hover:not(:focus) {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .form-textarea {
-    min-height: 120px;
-    line-height: 1.5;
-    font-family: 'SF Mono', Monaco, 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  min-height: 80px;
+  max-height: 120px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-y: auto;
 }
 
 .form-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
-.form-actions .action-btn {
-    min-width: 120px;
-    justify-content: center;
+.action-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.action-btn:hover::before {
+  left: 100%;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #007AFF 0%, #0056CC 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+.action-btn.primary:hover {
+  background: linear-gradient(135deg, #0056CC 0%, #003D99 100%);
+  box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.action-btn.primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+.action-btn:not(.primary) {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-btn:not(.primary):hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.action-btn:not(.primary):active {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(0);
 }
 
 .status-message {
-    margin-top: 16px;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-.status-message.success {
-    background: #d1fae5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
-}
-
-.status-message.error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fca5a5;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .status-message.hidden {
-    display: none;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
 }
 
-/* Responsive adjustments for forms */
-@media (max-width: 768px) {
-    .add-form-widget {
-        margin: 0 16px;
-        padding: 20px;
-    }
-    
-    .form-actions {
-        flex-direction: column;
-    }
-    
-    .form-actions .action-btn {
-        min-width: auto;
-    }
+.status-message.success {
+  background: rgba(52, 199, 89, 0.15);
+  color: #34C759;
+  border: 1px solid rgba(52, 199, 89, 0.3);
 }
 
+.status-message.error {
+  background: rgba(255, 69, 58, 0.15);
+  color: #FF453A;
+  border: 1px solid rgba(255, 69, 58, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 720px) {
+  .add-form-widget {
+    margin: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    max-height: 360px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .action-btn {
+    width: 100%;
+    padding: 10px 16px;
+  }
+  
+  .form-textarea {
+    min-height: 60px;
+    max-height: 100px;
+  }
+}
+
+/* Focus ring for accessibility */
+.form-input:focus-visible,
+.form-textarea:focus-visible,
+.action-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar for textarea */
+.form-textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.form-textarea::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.form-textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.form-textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
 /* Tools Directory Styles */
 .tools-directory-widget {
     max-width: 100%;
@@ -845,26 +939,26 @@ mark {
     .tools-directory-widget {
         padding: 16px;
     }
-    
+
     .tools-grid {
         grid-template-columns: 1fr;
         gap: 12px;
     }
-    
+
     .tool-card {
         padding: 16px;
     }
-    
+
     .tool-icon {
         font-size: 24px;
         width: 40px;
         height: 40px;
     }
-    
+
     .tool-name {
         font-size: 16px;
     }
-    
+
     .tool-description {
         font-size: 13px;
     }

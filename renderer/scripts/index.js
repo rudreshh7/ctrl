@@ -1,9 +1,17 @@
 // Import modules
 import { EmojiPicker } from "./modules/emojiPicker.js";
-
+import { showHelpDialog } from "./modules/utils/utils.js";
+import { handleGoogleSearch } from "./modules/utils/googleSearch.js";
+import { handleChatGPTSearch } from "./modules/utils/chatgptSearch.js";
+import { showSumCalculator } from "./modules/utils/sum.js";
+import { showWeatherDialog } from "./modules/utils/weather.js";
+import { showDogDialog } from "./modules/utils/fun/dog.js";
+import { showCatDialog } from "./modules/utils/fun/cat.js";
 class CtrlSearch {
   constructor() {
     console.log("CtrlSearch constructor called");
+
+  
 
     this.snippets = [];
     this.documents = [];
@@ -33,7 +41,7 @@ class CtrlSearch {
     this.focusSearch();
   }
 
-  async loadData() {
+ async loadData() {
     try {
       console.log("Loading data...");
       this.snippets = await window.electronAPI.getSnippets();
@@ -317,6 +325,38 @@ class CtrlSearch {
         },
       },
       {
+        triggers: ["c", "cat", "cats"],
+        command:{
+          type:"system",
+          id:"cat",
+          title:"Random Cat",
+          subtitle:"Show a random cat image",
+          score: -1,
+        },
+
+      },
+      
+      {
+        triggers: ["d", "dog", "dogs"],
+        command: {
+          type: "system",
+          id: "dog",
+          title: "Random Dog",
+          subtitle: "Show a random dog image",
+          score: -1,
+        },
+      },
+        {
+        triggers: ["w", "weather", "?"],
+        command: {
+          type: "system",
+          id: "weather",
+          title: "Weather",
+          subtitle: "Show current weather information",
+          score: -1,
+        },
+      },
+      {
         triggers: ["q", "quit", "exit"],
         command: {
           type: "system",
@@ -582,7 +622,19 @@ class CtrlSearch {
         break;
 
       case "help":
-        this.showHelpDialog();
+        showHelpDialog(this.resultsContainer);
+        break;
+
+      case "dog":
+        showDogDialog(this.resultsContainer);
+        break;
+
+      case "cat":
+        showCatDialog(this.resultsContainer);
+        break;
+
+      case "weather":
+        showWeatherDialog(this.resultsContainer);
         break;
 
       case "quit":
@@ -597,8 +649,11 @@ class CtrlSearch {
         break;
 
       case "sum":
-        this.showSumCalculator();
-        break;
+        showSumCalculator(this.resultsContainer, () => {
+          this.showEmptyState();
+          this.focusSearch();
+        });
+        break
 
       case "add-snippet":
         this.openAddSnippetApp();
@@ -617,61 +672,15 @@ class CtrlSearch {
         break;
 
       case "google-search":
-        await this.handleGoogleSearch(result?.data?.searchQuery);
+        await handleGoogleSearch(result?.data?.searchQuery);
         break;
 
       case "chatgpt-search":
-        await this.handleChatGPTSearch(result?.data?.searchQuery);
+        await handleChatGPTSearch(result?.data?.searchQuery);
         break;
 
       default:
         console.log("Unknown system command:", commandId);
-    }
-  }
-
-  async handleGoogleSearch(searchQuery) {
-    if (!searchQuery) {
-      console.error("No search query provided for Google search");
-      return;
-    }
-
-    console.log("Opening Google search for:", searchQuery);
-
-    // Encode the search query for URL
-    const encodedQuery = encodeURIComponent(searchQuery);
-    const googleUrl = `https://www.google.com/search?q=${encodedQuery}`;
-
-    try {
-      // Use Electron's shell to open the URL in the default browser
-      await window.electronAPI.openExternal(googleUrl);
-
-      // Hide the Ctrl window after opening the search
-      window.electronAPI.hideWindow();
-    } catch (error) {
-      console.error("Failed to open Google search:", error);
-    }
-  }
-
-  async handleChatGPTSearch(searchQuery) {
-    if (!searchQuery) {
-      console.error("No search query provided for ChatGPT search");
-      return;
-    }
-
-    console.log("Opening ChatGPT with query:", searchQuery);
-
-    // Encode the search query for URL
-    const encodedQuery = encodeURIComponent(searchQuery);
-    const chatgptUrl = `https://chat.openai.com/?q=${encodedQuery}`;
-
-    try {
-      // Use Electron's shell to open the URL in the default browser
-      await window.electronAPI.openExternal(chatgptUrl);
-
-      // Hide the Ctrl window after opening ChatGPT
-      window.electronAPI.hideWindow();
-    } catch (error) {
-      console.error("Failed to open ChatGPT:", error);
     }
   }
 
@@ -690,186 +699,7 @@ class CtrlSearch {
     this.showAddBookmarkForm();
   }
 
-  showHelpDialog() {
-    const helpText = `
-    <div class="help-dialog">
-      <h3>Ctrl - Quick Launcher</h3>
-      <div class="help-section">
-        <h4>Smart Shortcuts:</h4>
-        <p><strong>s</strong> - Settings</p>
-        <p><strong>e</strong> - Emoji Picker</p>
-        <p><strong>sum</strong> - Calculator</p>
-        <p><strong>h</strong> - Help</p>
-        <p><strong>r</strong> - Reload Data</p>
-        <p><strong>q</strong> - Quit</p>
-      </div>
-      <div class="help-section">
-        <h4>Add Content:</h4>
-        <p><strong>add-snippet</strong> - New Code Snippet</p>
-        <p><strong>add-document</strong> - New Document Link</p>
-        <p><strong>add-bookmark</strong> - New Website Bookmark</p>
-      </div>
-      <div class="help-section">
-        <h4>Keyboard Shortcuts:</h4>
-        <p><strong>↑/↓</strong> - Navigate results</p>
-        <p><strong>Enter</strong> - Select result</p>
-        <p><strong>Esc</strong> - Close/Back</p>
-        <p><strong>Cmd/Ctrl + ,</strong> - Settings</p>
-        <p><strong>Ctrl + /</strong> - Focus search bar</p>
-      </div>
-      <div class="help-section">
-        <h4>Emoji Mode:</h4>
-        <p><strong>:</strong> - Enter emoji mode</p>
-        <p><strong>:search</strong> - Search emojis</p>
-      </div>
-      <div class="help-section">
-        <h4>External Search:</h4>
-        <p>🔍 <strong>Google Search</strong> - Available for any query</p>
-        <p>🤖 <strong>ChatGPT Search</strong> - Available for any query</p>
-      </div>
-    </div>
-    `;
-
-    this.resultsContainer.innerHTML = helpText;
-  }
-
-  showSumCalculator() {
-    const sumCalculatorHTML = `
-      <div class="sum-calculator-widget">
-        <div class="calculator-header">
-          <h3>Sum Calculator</h3>
-          <p>Enter numbers separated by spaces, commas, or new lines</p>
-        </div>
-        
-        <div class="calculator-input-section">
-          <textarea 
-            id="sum-numbers-input" 
-            class="sum-input" 
-            placeholder="e.g., 1, 2, 3, 4, 5 or 1 2 3 4 5"
-            rows="3"
-          ></textarea>
-        </div>
-
-        <div class="calculator-result">
-          <div class="result-display">
-            <span class="result-label">Sum:</span>
-            <span id="sum-result" class="result-value">0</span>
-          </div>
-          <div id="sum-details" class="calculation-details"></div>
-        </div>
-
-        <div class="calculator-actions">
-          <button id="sum-calculate-btn" class="action-btn primary">Calculate</button>
-          <button id="sum-clear-btn" class="action-btn">Clear</button>
-          <button id="sum-back-btn" class="action-btn">Back</button>
-        </div>
-      </div>
-    `;
-
-    this.resultsContainer.innerHTML = sumCalculatorHTML;
-    this.setupSumCalculatorEvents();
-
-    // Focus the input
-    setTimeout(() => {
-      document.getElementById("sum-numbers-input").focus();
-    }, 100);
-  }
-
-  setupSumCalculatorEvents() {
-    const input = document.getElementById("sum-numbers-input");
-    const calculateBtn = document.getElementById("sum-calculate-btn");
-    const clearBtn = document.getElementById("sum-clear-btn");
-    const backBtn = document.getElementById("sum-back-btn");
-
-    // Calculate on button click
-    calculateBtn.addEventListener("click", () => this.calculateSum());
-
-    // Calculate on Enter key
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.ctrlKey) {
-        e.preventDefault();
-        this.calculateSum();
-      } else if (e.key === "Escape") {
-        this.exitSumCalculator();
-      }
-    });
-
-    // Clear button
-    clearBtn.addEventListener("click", () => this.clearSumCalculator());
-
-    // Back button
-    backBtn.addEventListener("click", () => this.exitSumCalculator());
-
-    // Auto-calculate on input
-    let timeout;
-    input.addEventListener("input", () => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => this.calculateSum(), 300);
-    });
-  }
-
-  calculateSum() {
-    const input = document.getElementById("sum-numbers-input");
-    const resultSpan = document.getElementById("sum-result");
-    const detailsDiv = document.getElementById("sum-details");
-
-    try {
-      const inputText = input.value.trim();
-
-      if (!inputText) {
-        resultSpan.textContent = "0";
-        detailsDiv.textContent = "Enter numbers to calculate";
-        return;
-      }
-
-      // Parse numbers from various separators
-      const numbers = inputText
-        .split(/[,\s\n\r]+/)
-        .map((str) => str.trim())
-        .filter((str) => str !== "")
-        .map((str) => {
-          const num = parseFloat(str);
-          if (isNaN(num)) {
-            throw new Error(`"${str}" is not a valid number`);
-          }
-          return num;
-        });
-
-      if (numbers.length === 0) {
-        resultSpan.textContent = "0";
-        detailsDiv.textContent = "No valid numbers found";
-        return;
-      }
-
-      const sum = numbers.reduce((acc, num) => acc + num, 0);
-
-      // Update result
-      resultSpan.textContent = sum.toLocaleString();
-
-      // Show details
-      const details = [
-        `Numbers: ${numbers.join(" + ")}`,
-        `Count: ${numbers.length}`,
-        `Average: ${(sum / numbers.length).toFixed(2)}`,
-      ].join(" • ");
-
-      detailsDiv.textContent = details;
-    } catch (error) {
-      resultSpan.textContent = "Error";
-      detailsDiv.textContent = error.message;
-    }
-  }
-
-  clearSumCalculator() {
-    const input = document.getElementById("sum-numbers-input");
-    const resultSpan = document.getElementById("sum-result");
-    const detailsDiv = document.getElementById("sum-details");
-
-    input.value = "";
-    resultSpan.textContent = "0";
-    detailsDiv.textContent = "";
-    input.focus();
-  }
+ 
 
   showToolsDirectory() {
     console.log("Showing tools directory");
@@ -943,66 +773,52 @@ class CtrlSearch {
     });
   }
 
-  showAddSnippetForm() {
-    const addSnippetHTML = `
-      <div class="add-form-widget">
-        <div class="form-header">
-          <h3>📝 Add Code Snippet</h3>
-          <p>Save your code snippets for quick access</p>
-        </div>
-        
-        <div class="form-content">
-          <div class="form-group">
-            <label for="snippet-title">Title *</label>
-            <input 
-              type="text" 
-              id="snippet-title" 
-              class="form-input" 
-              placeholder="e.g., Hello World, Express Setup"
-              required
-            />
-          </div>
-          
-          <div class="form-group">
-            <label for="snippet-description">Description (Optional)</label>
-            <input 
-              type="text" 
-              id="snippet-description" 
-              class="form-input" 
-              placeholder="Brief description of this snippet..."
-            />
-          </div>
-          
-          <div class="form-group">
-            <label for="snippet-content">Code Snippet *</label>
-            <textarea 
-              id="snippet-content" 
-              class="form-textarea" 
-              placeholder="Paste your code snippet here..."
-              rows="8"
-              required
-            ></textarea>
-          </div>
-        </div>
+showAddSnippetForm() {
+  const addSnippetHTML = `
+    <div class="add-form-widget">
+      <div class="form-content">
+        <input 
+          type="text" 
+          id="snippet-title" 
+          class="form-input" 
+          placeholder="Title *"
+          required
+        />
 
-        <div class="form-actions">
-          <button id="save-snippet-btn" class="action-btn primary">💾 Save Snippet</button>
-          <button id="clear-snippet-btn" class="action-btn">🗑️ Clear</button>
-          <button id="back-snippet-btn" class="action-btn">← Back</button>
-        </div>
-        
-        <div id="snippet-status" class="status-message hidden"></div>
+        <input 
+          type="text" 
+          id="snippet-description" 
+          class="form-input" 
+          placeholder="Description (optional)"
+        />
+
+        <textarea 
+          id="snippet-content" 
+          class="form-textarea" 
+          placeholder="Your code *" 
+          rows="6"
+          required
+        ></textarea>
       </div>
-    `;
 
-    this.resultsContainer.innerHTML = addSnippetHTML;
-    this.setupAddSnippetEvents();
+      <div class="form-actions">
+        <button id="save-snippet-btn" class="action-btn primary">Save</button>
+        <button id="clear-snippet-btn" class="action-btn">Clear</button>
+        <button id="back-snippet-btn" class="action-btn">Back</button>
+      </div>
 
-    // Focus the title input
-    setTimeout(() => {
-      document.getElementById("snippet-title").focus();
-    }, 100);
-  }
+      <div id="snippet-status" class="status-message hidden"></div>
+    </div>
+  `;
+
+  this.resultsContainer.innerHTML = addSnippetHTML;
+  this.setupAddSnippetEvents();
+
+  setTimeout(() => {
+    document.getElementById("snippet-title").focus();
+  }, 100);
+}
+
 
   setupAddSnippetEvents() {
     const titleInput = document.getElementById("snippet-title");
