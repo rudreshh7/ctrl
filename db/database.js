@@ -1,93 +1,79 @@
-const sqlite3 = require("sqlite3").verbose();
+const Database = require("better-sqlite3");
 const path = require("path");
+const { app } = require("electron");
 
 let db = null;
 
 function initDatabase() {
   return new Promise((resolve, reject) => {
     try {
-      db = new sqlite3.Database(
-        path.join(__dirname, "..", "data.db"),
-        (err) => {
-          if (err) {
-            console.error("Failed to connect to database:", err);
-            reject(err);
-            return;
-          }
+      // Use Electron's userData directory for the database in production
+      // Fall back to current directory for development if app is not available
+      const dbPath = app ? 
+        path.join(app.getPath("userData"), "ctrl-database.db") : 
+        path.join(__dirname, "..", "data.db");
+      
+      console.log("Database path:", dbPath);
+      db = new Database(dbPath);
+      
+      // Create snippets table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS snippets (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT,
+          description TEXT,
+          content TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
 
-          // Create snippets table
-          db.run(
-            `
-          CREATE TABLE IF NOT EXISTS snippets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            description TEXT,
-            content TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `,
-            (err) => {
-              if (err) {
-                console.error("Failed to create snippets table:", err);
-                reject(err);
-                return;
-              }
+      // Create documents table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS documents (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          link TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
 
-              // Create documents table
-              db.run(
-                `
-            CREATE TABLE IF NOT EXISTS documents (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              title TEXT NOT NULL,
-              link TEXT NOT NULL,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-          `,
-                (err) => {
-                  if (err) {
-                    console.error("Failed to create documents table:", err);
-                    reject(err);
-                    return;
-                  }
+      // Create bookmarks table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS bookmarks (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          url TEXT NOT NULL,
+          description TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
 
-                  // Create bookmarks table
-                  db.run(
-                    `
-                CREATE TABLE IF NOT EXISTS bookmarks (
-                  id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  title TEXT NOT NULL,
-                  url TEXT NOT NULL,
-                  description TEXT,
-                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-              `,
-                    (err) => {
-                      if (err) {
-                        console.error("Failed to create bookmarks table:", err);
-                        reject(err);
-                        return;
-                      }
+      // Create tools table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS tools (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          url TEXT NOT NULL,
+          description TEXT,
+          category TEXT DEFAULT 'utility',
+          keywords TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
 
-                      console.log("Database initialized successfully");
+      console.log("Database initialized successfully");
 
-                      // Add sample data for testing
-                      addSampleData()
-                        .then(() => {
-                          console.log("Sample data added successfully");
-                          resolve();
-                        })
-                        .catch((err) => {
-                          console.error("Error adding sample data:", err);
-                          resolve(); // Still resolve even if sample data fails
-                        });
-                    }
-                  );
-                }
-              );
-            }
-          );
-        }
-      );
+      // Add sample data for testing
+      addSampleData()
+        .then(() => {
+          console.log("Sample data added successfully");
+          resolve();
+        })
+        .catch((err) => {
+          console.error("Error adding sample data:", err);
+          resolve(); // Still resolve even if sample data fails
+        });
+
     } catch (error) {
       console.error("Failed to initialize database:", error);
       reject(error);
@@ -99,14 +85,9 @@ function initDatabase() {
 function getAllSnippets() {
   return new Promise((resolve, reject) => {
     try {
-      db.all("SELECT * FROM snippets ORDER BY created_at DESC", (err, rows) => {
-        if (err) {
-          console.error("Error getting snippets:", err);
-          resolve([]);
-        } else {
-          resolve(rows);
-        }
-      });
+      const stmt = db.prepare("SELECT * FROM snippets ORDER BY created_at DESC");
+      const rows = stmt.all();
+      resolve(rows);
     } catch (error) {
       console.error("Error getting snippets:", error);
       resolve([]);
@@ -127,18 +108,9 @@ function addSnippet(title, description, content) {
         return;
       }
 
-      db.run(
-        "INSERT INTO snippets (title, description, content) VALUES (?, ?, ?)",
-        [title || "", description || "", content.trim()],
-        function (err) {
-          if (err) {
-            console.error("Error adding snippet:", err);
-            resolve({ success: false, error: err.message });
-          } else {
-            resolve({ id: this.lastID, success: true });
-          }
-        }
-      );
+      const stmt = db.prepare("INSERT INTO snippets (title, description, content) VALUES (?, ?, ?)");
+      const result = stmt.run(title || "", description || "", content.trim());
+      resolve({ id: result.lastInsertRowid, success: true });
     } catch (error) {
       console.error("Error adding snippet:", error);
       resolve({ success: false, error: error.message });
@@ -149,14 +121,9 @@ function addSnippet(title, description, content) {
 function deleteSnippet(id) {
   return new Promise((resolve, reject) => {
     try {
-      db.run("DELETE FROM snippets WHERE id = ?", [id], function (err) {
-        if (err) {
-          console.error("Error deleting snippet:", err);
-          resolve({ success: false, error: err.message });
-        } else {
-          resolve({ success: this.changes > 0 });
-        }
-      });
+      const stmt = db.prepare("DELETE FROM snippets WHERE id = ?");
+      const result = stmt.run(id);
+      resolve({ success: result.changes > 0 });
     } catch (error) {
       console.error("Error deleting snippet:", error);
       resolve({ success: false, error: error.message });
@@ -168,17 +135,9 @@ function deleteSnippet(id) {
 function getAllDocuments() {
   return new Promise((resolve, reject) => {
     try {
-      db.all(
-        "SELECT * FROM documents ORDER BY created_at DESC",
-        (err, rows) => {
-          if (err) {
-            console.error("Error getting documents:", err);
-            resolve([]);
-          } else {
-            resolve(rows);
-          }
-        }
-      );
+      const stmt = db.prepare("SELECT * FROM documents ORDER BY created_at DESC");
+      const rows = stmt.all();
+      resolve(rows);
     } catch (error) {
       console.error("Error getting documents:", error);
       resolve([]);
@@ -189,18 +148,9 @@ function getAllDocuments() {
 function addDocument(title, link) {
   return new Promise((resolve, reject) => {
     try {
-      db.run(
-        "INSERT INTO documents (title, link) VALUES (?, ?)",
-        [title, link],
-        function (err) {
-          if (err) {
-            console.error("Error adding document:", err);
-            resolve({ success: false, error: err.message });
-          } else {
-            resolve({ id: this.lastID, success: true });
-          }
-        }
-      );
+      const stmt = db.prepare("INSERT INTO documents (title, link) VALUES (?, ?)");
+      const result = stmt.run(title, link);
+      resolve({ id: result.lastInsertRowid, success: true });
     } catch (error) {
       console.error("Error adding document:", error);
       resolve({ success: false, error: error.message });
@@ -211,14 +161,9 @@ function addDocument(title, link) {
 function deleteDocument(id) {
   return new Promise((resolve, reject) => {
     try {
-      db.run("DELETE FROM documents WHERE id = ?", [id], function (err) {
-        if (err) {
-          console.error("Error deleting document:", err);
-          resolve({ success: false, error: err.message });
-        } else {
-          resolve({ success: this.changes > 0 });
-        }
-      });
+      const stmt = db.prepare("DELETE FROM documents WHERE id = ?");
+      const result = stmt.run(id);
+      resolve({ success: result.changes > 0 });
     } catch (error) {
       console.error("Error deleting document:", error);
       resolve({ success: false, error: error.message });
@@ -230,17 +175,9 @@ function deleteDocument(id) {
 function getAllBookmarks() {
   return new Promise((resolve, reject) => {
     try {
-      db.all(
-        "SELECT * FROM bookmarks ORDER BY created_at DESC",
-        (err, rows) => {
-          if (err) {
-            console.error("Error getting bookmarks:", err);
-            resolve([]);
-          } else {
-            resolve(rows);
-          }
-        }
-      );
+      const stmt = db.prepare("SELECT * FROM bookmarks ORDER BY created_at DESC");
+      const rows = stmt.all();
+      resolve(rows);
     } catch (error) {
       console.error("Error getting bookmarks:", error);
       resolve([]);
@@ -251,18 +188,9 @@ function getAllBookmarks() {
 function addBookmark(title, url, description = "") {
   return new Promise((resolve, reject) => {
     try {
-      db.run(
-        "INSERT INTO bookmarks (title, url, description) VALUES (?, ?, ?)",
-        [title, url, description],
-        function (err) {
-          if (err) {
-            console.error("Error adding bookmark:", err);
-            resolve({ success: false, error: err.message });
-          } else {
-            resolve({ id: this.lastID, success: true });
-          }
-        }
-      );
+      const stmt = db.prepare("INSERT INTO bookmarks (title, url, description) VALUES (?, ?, ?)");
+      const result = stmt.run(title, url, description);
+      resolve({ id: result.lastInsertRowid, success: true });
     } catch (error) {
       console.error("Error adding bookmark:", error);
       resolve({ success: false, error: error.message });
@@ -273,14 +201,9 @@ function addBookmark(title, url, description = "") {
 function deleteBookmark(id) {
   return new Promise((resolve, reject) => {
     try {
-      db.run("DELETE FROM bookmarks WHERE id = ?", [id], function (err) {
-        if (err) {
-          console.error("Error deleting bookmark:", err);
-          resolve({ success: false, error: err.message });
-        } else {
-          resolve({ success: this.changes > 0 });
-        }
-      });
+      const stmt = db.prepare("DELETE FROM bookmarks WHERE id = ?");
+      const result = stmt.run(id);
+      resolve({ success: result.changes > 0 });
     } catch (error) {
       console.error("Error deleting bookmark:", error);
       resolve({ success: false, error: error.message });
@@ -295,8 +218,9 @@ async function addSampleData() {
     const snippets = await getAllSnippets();
     const documents = await getAllDocuments();
     const bookmarks = await getAllBookmarks();
+    const tools = await getAllTools();
 
-    if (snippets.length > 0 || documents.length > 0 || bookmarks.length > 0) {
+    if (snippets.length > 0 || documents.length > 0 || bookmarks.length > 0 || tools.length > 0) {
       console.log("Sample data already exists, skipping...");
       return;
     }
@@ -355,10 +279,66 @@ async function addSampleData() {
     await addBookmark("Google", "https://google.com", "Search engine");
     await addBookmark("YouTube", "https://youtube.com", "Video platform");
 
+    // Add sample tools
+    await addTool(
+      "Edit PDF",
+      "https://evilpdf.appwrite.network/",
+      "Edit, merge, split, and manipulate PDF files online",
+      "productivity",
+      "pdf edit manipulate merge split convert"
+    );
+    await addTool(
+      "Remove Background",
+      "https://www.remove.bg/",
+      "Remove background from images automatically using AI",
+      "design",
+      "background remove image photo ai automatic"
+    );
+
     console.log("Sample data added successfully");
   } catch (error) {
     console.error("Error adding sample data:", error);
   }
+}
+
+// Tool operations
+function getAllTools() {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare("SELECT * FROM tools ORDER BY created_at DESC");
+      const rows = stmt.all();
+      resolve(rows);
+    } catch (error) {
+      console.error("Error getting tools:", error);
+      resolve([]);
+    }
+  });
+}
+
+function addTool(name, url, description = "", category = "utility", keywords = "") {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare("INSERT INTO tools (name, url, description, category, keywords) VALUES (?, ?, ?, ?, ?)");
+      const result = stmt.run(name, url, description, category, keywords);
+      resolve({ id: result.lastInsertRowid, success: true });
+    } catch (error) {
+      console.error("Error adding tool:", error);
+      resolve({ success: false, error: error.message });
+    }
+  });
+}
+
+function deleteTool(id) {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare("DELETE FROM tools WHERE id = ?");
+      const result = stmt.run(id);
+      resolve({ success: result.changes > 0 });
+    } catch (error) {
+      console.error("Error deleting tool:", error);
+      resolve({ success: false, error: error.message });
+    }
+  });
 }
 
 module.exports = {
@@ -372,4 +352,7 @@ module.exports = {
   getAllBookmarks,
   addBookmark,
   deleteBookmark,
+  getAllTools,
+  addTool,
+  deleteTool,
 };

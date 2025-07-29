@@ -17,6 +17,9 @@ const {
   getAllBookmarks,
   addBookmark,
   deleteBookmark,
+  getAllTools,
+  addTool,
+  deleteTool,
 } = require("./db/database");
 
 class CtrlApp {
@@ -36,6 +39,7 @@ class CtrlApp {
       resizable: false,
       skipTaskbar: true,
       show: false,
+      icon: path.join(__dirname, 'assets/icon.png'),
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -74,6 +78,7 @@ class CtrlApp {
       alwaysOnTop: false,
       resizable: true,
       show: false,
+      icon: path.join(__dirname, 'assets/icon.png'),
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -146,6 +151,19 @@ class CtrlApp {
 
     ipcMain.handle("delete-bookmark", async (event, id) => {
       return deleteBookmark(id);
+    });
+
+    // Tool handlers
+    ipcMain.handle("get-tools", async () => {
+      return getAllTools();
+    });
+
+    ipcMain.handle("add-tool", async (event, name, url, description, category, keywords) => {
+      return addTool(name, url, description, category, keywords);
+    });
+
+    ipcMain.handle("delete-tool", async (event, id) => {
+      return deleteTool(id);
     });
 
     // Utility handlers

@@ -20,6 +20,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("add-bookmark", title, url, description),
   deleteBookmark: (id) => ipcRenderer.invoke("delete-bookmark", id),
 
+  // Tool operations
+  getTools: () => ipcRenderer.invoke("get-tools"),
+  addTool: (name, url, description, category, keywords) =>
+    ipcRenderer.invoke("add-tool", name, url, description, category, keywords),
+  deleteTool: (id) => ipcRenderer.invoke("delete-tool", id),
+
   // Utility operations
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
   hideWindow: () => ipcRenderer.invoke("hide-window"),

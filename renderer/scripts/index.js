@@ -8,6 +8,7 @@ class CtrlSearch {
     this.snippets = [];
     this.documents = [];
     this.bookmarks = [];
+    this.tools = [];
     this.currentResults = [];
     this.selectedIndex = 0;
 
@@ -38,11 +39,13 @@ class CtrlSearch {
       this.snippets = await window.electronAPI.getSnippets();
       this.documents = await window.electronAPI.getDocuments();
       this.bookmarks = await window.electronAPI.getBookmarks();
+      this.tools = await window.electronAPI.getTools();
 
       console.log("Data loaded:", {
         snippets: this.snippets.length,
         documents: this.documents.length,
         bookmarks: this.bookmarks.length,
+        tools: this.tools.length,
       });
 
       if (this.snippets.length > 0) {
@@ -72,9 +75,12 @@ class CtrlSearch {
       keys: [
         { name: "content", weight: 0.7 },
         { name: "title", weight: 0.8 },
+        { name: "name", weight: 0.8 }, // For tools
         { name: "url", weight: 0.4 },
         { name: "link", weight: 0.4 },
         { name: "description", weight: 0.5 },
+        { name: "keywords", weight: 0.6 }, // For tools
+        { name: "category", weight: 0.3 }, // For tools
       ],
       threshold: 0.6, // More lenient for fuzzy matching
       includeScore: true,
@@ -94,6 +100,7 @@ class CtrlSearch {
         ...this.snippets.map((item) => ({ ...item, type: "snippet" })),
         ...this.documents.map((item) => ({ ...item, type: "document" })),
         ...this.bookmarks.map((item) => ({ ...item, type: "bookmark" })),
+        ...this.tools.map((item) => ({ ...item, type: "tool" })),
       ];
 
       this.fuse = new Fuse(allData, options);
@@ -222,12 +229,16 @@ class CtrlSearch {
           title:
             item.type === "snippet"
               ? item.title || this.getSnippetPreview(item.content)
+              : item.type === "tool"
+              ? item.name
               : item.title || item.content,
           subtitle:
             item.type === "snippet"
               ? item.description || item.content
               : item.type === "document"
               ? item.link
+              : item.type === "tool"
+              ? item.description
               : item.url || item.description,
           data: item,
           score: result.score,
@@ -375,6 +386,16 @@ class CtrlSearch {
           score: -1,
         },
       },
+      {
+        triggers: ["tools", "tool", "utility", "utilities"],
+        command: {
+          type: "system",
+          id: "tools",
+          title: "Browse Tools",
+          subtitle: "View all available third-party tools",
+          score: -1,
+        },
+      },
     ];
 
     // Check for exact matches and partial matches
@@ -462,6 +483,7 @@ class CtrlSearch {
       snippet: "code",
       document: "file",
       bookmark: "bookmark",
+      tool: "wrench",
       emoji: "smile",
       system: "command",
     };
@@ -535,6 +557,8 @@ class CtrlSearch {
       window.electronAPI.openExternal(result.data.link);
     } else if (result.type === "bookmark") {
       window.electronAPI.openExternal(result.data.url);
+    } else if (result.type === "tool") {
+      window.electronAPI.openExternal(result.data.url);
     }
 
     window.electronAPI.hideWindow();
@@ -586,6 +610,10 @@ class CtrlSearch {
 
       case "add-bookmark":
         this.openAddBookmarkApp();
+        break;
+
+      case "tools":
+        this.showToolsDirectory();
         break;
 
       case "google-search":
@@ -843,9 +871,76 @@ class CtrlSearch {
     input.focus();
   }
 
-  exitSumCalculator() {
-    this.showEmptyState();
-    this.focusSearch();
+  showToolsDirectory() {
+    console.log("Showing tools directory");
+    
+    const toolsHTML = `
+      <div class="tools-directory-widget">
+        <div class="tools-header">
+          <h3>🛠️ Tools Directory</h3>
+          <p>Quick access to useful third-party tools and utilities</p>
+        </div>
+        
+        <div class="tools-grid" id="tools-grid">
+          ${this.tools.map(tool => `
+            <div class="tool-card" data-url="${tool.url}">
+              <div class="tool-icon">🛠️</div>
+              <div class="tool-content">
+                <h4 class="tool-name">${tool.name}</h4>
+                <p class="tool-description">${tool.description}</p>
+                <span class="tool-category">${tool.category}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="tools-actions">
+          <button id="tools-back-btn" class="action-btn">← Back to Search</button>
+        </div>
+      </div>
+    `;
+
+    this.resultsContainer.innerHTML = toolsHTML;
+    this.setupToolsDirectoryEvents();
+  }
+
+  setupToolsDirectoryEvents() {
+    const toolCards = document.querySelectorAll('.tool-card');
+    const backBtn = document.getElementById('tools-back-btn');
+
+    // Add click handlers for tool cards
+    toolCards.forEach(card => {
+      card.addEventListener('click', () => {
+        const url = card.getAttribute('data-url');
+        window.electronAPI.openExternal(url);
+        window.electronAPI.hideWindow();
+      });
+
+      // Add hover effect
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-2px)';
+        card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0)';
+        card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+      });
+    });
+
+    // Back button
+    backBtn.addEventListener('click', () => {
+      this.showEmptyState();
+      this.focusSearch();
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.showEmptyState();
+        this.focusSearch();
+      }
+    });
   }
 
   showAddSnippetForm() {
@@ -1445,7 +1540,7 @@ class CtrlSearch {
   exitEmojiMode() {
     this.emojiPicker.exitEmojiMode();
     this.searchInput.placeholder =
-      "Fuzzy search snippets, documents, and bookmarks...";
+      "Fuzzy search snippets, documents, bookmarks, and tools...";
     this.searchInput.value = "";
     this.showEmptyState();
     this.focusSearch();
@@ -1457,10 +1552,10 @@ class CtrlSearch {
         <i data-lucide="search" class="empty-icon"></i>
         <p>Start typing to search...</p>
         <div style="margin-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">
-          <p>⚡ <strong>s</strong> = Settings • <strong>e</strong> = Emojis • <strong>sum</strong> = Calculator</p>
+          <p>⚡ <strong>s</strong> = Settings • <strong>e</strong> = Emojis • <strong>sum</strong> = Calculator • <strong>tools</strong> = Tools Directory</p>
           <p>➕ <strong>add-snippet</strong> = New Snippet • <strong>add-document</strong> = New Document • <strong>add-bookmark</strong> = New Bookmark</p>
           <p>💡 Type ":" to browse emoji categories</p>
-          <p>🔍 Search for snippets, documents, or bookmarks</p>
+          <p>🔍 Search for snippets, documents, bookmarks, or tools</p>
         </div>
       </div>
     `;
