@@ -963,3 +963,72 @@ kbd {
         font-size: 13px;
     }
 }
+
+
+
+/* Utils style */
+.crypto-dialog {
+  padding: 24px;
+  background: #ffffff;
+  max-width: 420px;
+  margin: 20px auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: #1f2937;
+}
+
+.crypto-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #1e40af;
+}
+
+.crypto-loading {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.crypto-data {
+  margin-bottom: 20px;
+}
+
+.crypto-item {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.crypto-label {
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+
+.crypto-price {
+  color: #4b5563;
+  font-size: 0.95rem;
+  margin: 4px 0;
+}
+
+.crypto-error {
+  color: #dc2626;
+  font-size: 0.95rem;
+}
+
+.crypto-close-btn {
+  background: #3b82f6;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.3s;
+}
+
+.crypto-close-btn:hover {
+  background: #2563eb;
+}
