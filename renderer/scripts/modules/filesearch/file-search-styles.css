@@ -1,0 +1,377 @@
+/* File Search Styles */
+.file-search-container {
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.file-search-header {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.file-search-header h3 {
+  margin: 0 0 4px 0;
+  color: #1f2937;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.file-search-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.file-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-item {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.file-item:hover,
+.file-item.highlighted {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+  background: #fafbff;
+}
+
+.file-item.file-opened {
+  border-color: #10b981;
+  background: #f0fdf4;
+  animation: fileActionFeedback 1s ease;
+}
+
+.file-item.file-revealed {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  animation: fileActionFeedback 1s ease;
+}
+
+.file-item.file-copied {
+  border-color: #8b5cf6;
+  background: #faf5ff;
+  animation: fileActionFeedback 1s ease;
+}
+
+.file-item.file-error {
+  border-color: #ef4444;
+  background: #fef2f2;
+  animation: fileActionFeedback 1s ease;
+}
+
+@keyframes fileActionFeedback {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.file-item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.file-item-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.file-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.file-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-item-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  word-break: break-word;
+}
+
+.file-name mark {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 1px 2px;
+  border-radius: 2px;
+}
+
+.folder-indicator {
+  color: #6b7280;
+  font-weight: normal;
+}
+
+.file-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #9ca3af;
+  flex-wrap: wrap;
+}
+
+.file-path {
+  font-family: 'Consolas', 'Monaco', monospace;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size,
+.file-date {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.file-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.file-item:hover .file-item-actions {
+  opacity: 1;
+}
+
+.file-action {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.file-action:hover {
+  background: #f3f4f6;
+}
+
+.file-action.open-btn:hover {
+  background: #dbeafe;
+  color: #3b82f6;
+}
+
+.file-action.reveal-btn:hover {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+.file-action.copy-path-btn:hover {
+  background: #f3e8ff;
+  color: #8b5cf6;
+}
+
+.action-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.file-type-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Empty State */
+.empty-file-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.empty-file-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  color: #d1d5db;
+}
+
+.empty-file-state p {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.empty-file-help {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.empty-file-help p {
+  margin: 4px 0;
+}
+
+/* Loading State */
+.file-search-loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 16px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.file-search-loading p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* File Type Specific Styles */
+.file-item[data-is-directory="true"] .file-item-name {
+  font-weight: 600;
+}
+
+.file-item[data-is-directory="true"] .file-icon {
+  color: #3b82f6 !important;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .file-item-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .file-path {
+    max-width: 150px;
+  }
+  
+  .file-type-badge {
+    position: static;
+    margin-top: 8px;
+    align-self: flex-start;
+  }
+}
+
+/* Scrollbar Styling */
+.file-search-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.file-search-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.file-search-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.file-search-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .file-item {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .file-item:hover,
+  .file-item.highlighted {
+    background: #111827;
+    border-color: #3b82f6;
+  }
+  
+  .file-name {
+    color: #f9fafb;
+  }
+  
+  .file-path {
+    background: #374151;
+    color: #d1d5db;
+  }
+  
+  .file-search-header h3 {
+    color: #f9fafb;
+  }
+}
+
+/* Keyboard Navigation Indicators */
+.file-item.highlighted {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+/* File Extension Indicators */
+.file-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--file-type-color, #e5e7eb);
+  border-radius: 8px 0 0 8px;
+}
+
+/* Animation for file operations */
+.file-item.opening {
+  animation: fileOpening 0.3s ease;
+}
+
+@keyframes fileOpening {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}

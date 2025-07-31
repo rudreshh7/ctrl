@@ -7,6 +7,8 @@ import { CommandHandler } from "./modules/CommandHandler.js";
 import { EventManager } from "./modules/EventManager.js";
 import { ClipboardManager } from "./modules/clipboardhistory/ClipboardManager.js";
 import { ClipboardUI } from "./modules/clipboardhistory/ClipboardUI.js";
+import { FileSearchManager } from "./modules/filesearch/FileSearchManager.js";
+import { FileSearchUI } from "./modules/filesearch/FileSearchUI.js";
 
 class CtrlSearch {
   constructor() {
@@ -25,6 +27,8 @@ class CtrlSearch {
     this.uiManager = new UIManager(this.resultsContainer);
     this.clipboardManager = new ClipboardManager();
     this.clipboardUI = new ClipboardUI(this.resultsContainer, this.clipboardManager);
+    this.fileSearchManager = new FileSearchManager();
+    this.fileSearchUI = new FileSearchUI(this.resultsContainer, this.fileSearchManager);
     this.formManager = new FormManager(
       this.resultsContainer,
       () => this.searchManager.loadData(), // onDataReload
@@ -76,12 +80,14 @@ class CtrlSearch {
 
     // Handle escape key
     this.resultsContainer.addEventListener("escapePressed", () => {
-      if (this.emojiPicker.isInEmojiMode()) {
-        this.exitEmojiMode();
+        if (this.emojiPicker.isInEmojiMode()) {
+          this.exitEmojiMode();
       } else if (this.clipboardManager.isInClipboardHistoryMode()) {
         this.exitClipboardMode();
-      } else {
-        window.electronAPI.hideWindow();
+      } else if (this.fileSearchManager.isInFileMode()) {
+        this.exitFileSearchMode();
+        } else {
+          window.electronAPI.hideWindow();
       }
     });
 
@@ -122,6 +128,23 @@ class CtrlSearch {
         this.clipboardUI.displayClipboardResults(results);
       }
     });
+
+    // Handle file search mode events
+    this.resultsContainer.addEventListener("enterFileSearchMode", () => {
+      this.enterFileSearchMode();
+    });
+
+    this.resultsContainer.addEventListener("exitFileSearchMode", () => {
+      this.exitFileSearchMode();
+    });
+
+    // Handle file search refresh
+    this.resultsContainer.addEventListener("refreshFileSearch", () => {
+      if (this.fileSearchManager.isInFileMode()) {
+        const query = this.eventManager.getSearchValue();
+        this.performFileSearch(query);
+      }
+    });
   }
 
   focusSearch() {
@@ -139,8 +162,28 @@ class CtrlSearch {
       } else if (this.clipboardManager.isInClipboardHistoryMode()) {
         const results = this.clipboardManager.searchClipboardHistory('');
         this.clipboardUI.displayClipboardResults(results);
+      } else if (this.fileSearchManager.isInFileMode()) {
+        this.fileSearchUI.showEmptyFileState();
       } else {
         this.uiManager.showEmptyState();
+      }
+      return;
+    }
+
+    // Check if user wants to enter file search mode
+    if (query === ">" && !this.fileSearchManager.isInFileMode()) {
+      console.log("Entering file search mode");
+      this.enterFileSearchMode();
+      return;
+    }
+
+    // If query starts with ">" and we're not in file search mode, enter file search mode with search
+    if (query.startsWith(">") && !this.fileSearchManager.isInFileMode()) {
+      console.log("Entering file search mode with search");
+      this.enterFileSearchMode();
+      const fileQuery = query.substring(1);
+      if (fileQuery.trim()) {
+        this.performFileSearch(fileQuery);
       }
       return;
     }
@@ -176,6 +219,12 @@ class CtrlSearch {
       const emojiQuery = query.substring(1);
       const results = this.emojiPicker.searchEmojisInPicker(emojiQuery);
       this.uiManager.displayResults(results);
+      return;
+    }
+
+    // Handle file search when in file search mode
+    if (this.fileSearchManager.isInFileMode()) {
+      this.performFileSearch(query);
       return;
     }
 
@@ -228,6 +277,40 @@ class CtrlSearch {
     this.eventManager.updateSearchPlaceholder("Fuzzy search snippets, documents, bookmarks, and tools...");
     this.eventManager.clearSearchInput();
     this.showEmptyStateAndFocus();
+  }
+
+  // File search mode methods
+  enterFileSearchMode() {
+    this.eventManager.updateSearchPlaceholder("Search files and folders... (ESC to go back)");
+    this.eventManager.clearSearchInput();
+    this.fileSearchManager.enterFileSearchMode();
+    this.fileSearchUI.showEmptyFileState();
+    this.focusSearch();
+  }
+
+  exitFileSearchMode() {
+    this.fileSearchManager.exitFileSearchMode();
+    this.eventManager.updateSearchPlaceholder("Fuzzy search snippets, documents, bookmarks, and tools...");
+    this.eventManager.clearSearchInput();
+    this.showEmptyStateAndFocus();
+  }
+
+  async performFileSearch(query) {
+    if (!query || query.trim().length < 2) {
+      this.fileSearchUI.showEmptyFileState();
+      return;
+    }
+
+    // Show loading state
+    this.fileSearchUI.showFileSearchLoading();
+
+    try {
+      const results = await this.fileSearchManager.searchFiles(query.trim());
+      this.fileSearchUI.displayFileResults(results);
+    } catch (error) {
+      console.error("File search error:", error);
+      this.fileSearchUI.showEmptyFileState();
+    }
   }
 
   // Helper methods

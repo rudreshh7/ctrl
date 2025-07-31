@@ -5,7 +5,9 @@ const {
   globalShortcut,
   shell,
 } = require("electron");
+const fs = require("fs").promises;
 const path = require("path");
+const os = require("os");
 const {
   initDatabase,
   getAllSnippets,
@@ -26,6 +28,47 @@ const {
   deleteClipboardItem,
   clearClipboardHistory,
 } = require("./db/database");
+
+// Helper function for recursive file search
+async function searchDirectory(dirPath, searchTerms, results, maxDepth, currentDepth = 0) {
+  if (currentDepth >= maxDepth || results.length >= 50) return;
+
+  try {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      try {
+        const fullPath = path.join(dirPath, entry.name);
+        const fileName = entry.name.toLowerCase();
+        
+        // Check if filename matches any search term
+        const matches = searchTerms.some(term => fileName.includes(term));
+        
+        if (matches) {
+          const stats = await fs.stat(fullPath);
+          results.push({
+            name: entry.name,
+            path: fullPath,
+            isDirectory: entry.isDirectory(),
+            size: stats.size,
+            modified: stats.mtime.toISOString(),
+          });
+        }
+
+        // Recursively search subdirectories
+        if (entry.isDirectory() && currentDepth < maxDepth - 1) {
+          await searchDirectory(fullPath, searchTerms, results, maxDepth, currentDepth + 1);
+        }
+      } catch (error) {
+        // Skip files/folders that can't be accessed
+        continue;
+      }
+    }
+  } catch (error) {
+    // Skip directories that can't be accessed
+    return;
+  }
+}
 
 class CtrlApp {
   constructor() {
@@ -190,6 +233,132 @@ class CtrlApp {
 
     ipcMain.handle("clear-clipboard-history", async () => {
       return clearClipboardHistory();
+    });
+
+    // File System handlers
+    ipcMain.handle("get-user-directories", async () => {
+      try {
+        const userDirs = [];
+        const homeDir = os.homedir();
+        
+        // Common user directories across platforms
+        const commonDirs = [
+          path.join(homeDir, 'Desktop'),
+          path.join(homeDir, 'Documents'),
+          path.join(homeDir, 'Downloads'),
+        ];
+
+        // Platform-specific directories
+        if (process.platform === 'win32') {
+          commonDirs.push(
+            path.join(homeDir, 'Pictures'),
+            path.join(homeDir, 'Videos'),
+            path.join(homeDir, 'Music')
+          );
+        } else if (process.platform === 'darwin') {
+          commonDirs.push(
+            path.join(homeDir, 'Pictures'),
+            path.join(homeDir, 'Movies'),
+            path.join(homeDir, 'Music')
+          );
+        } else {
+          // Linux
+          commonDirs.push(
+            path.join(homeDir, 'Pictures'),
+            path.join(homeDir, 'Videos'),
+            path.join(homeDir, 'Music')
+          );
+        }
+
+        // Check which directories exist
+        for (const dir of commonDirs) {
+          try {
+            await fs.access(dir);
+            userDirs.push(dir);
+          } catch (error) {
+            // Directory doesn't exist, skip it
+          }
+        }
+
+        return userDirs;
+      } catch (error) {
+        console.error("Error getting user directories:", error);
+        return [];
+      }
+    });
+
+    ipcMain.handle("read-directory", async (event, dirPath) => {
+      try {
+        const entries = await fs.readdir(dirPath, { withFileTypes: true });
+        const files = [];
+
+        for (const entry of entries) {
+          try {
+            const fullPath = path.join(dirPath, entry.name);
+            const stats = await fs.stat(fullPath);
+            
+            files.push({
+              name: entry.name,
+              isDirectory: entry.isDirectory(),
+              size: stats.size,
+              modified: stats.mtime.toISOString(),
+            });
+          } catch (error) {
+            // Skip files that can't be accessed
+            continue;
+          }
+        }
+
+        return files;
+      } catch (error) {
+        console.error(`Error reading directory ${dirPath}:`, error);
+        return [];
+      }
+    });
+
+    ipcMain.handle("search-files", async (event, query, searchPaths) => {
+      try {
+        const results = [];
+        const searchTerms = query.toLowerCase().split(/\s+/);
+
+        for (const searchPath of searchPaths) {
+          try {
+            await searchDirectory(searchPath, searchTerms, results, 2); // Max depth 2
+          } catch (error) {
+            // Skip directories that can't be accessed
+            continue;
+          }
+        }
+
+        return results.slice(0, 50); // Limit results
+      } catch (error) {
+        console.error("Error searching files:", error);
+        return [];
+      }
+    });
+
+    ipcMain.handle("join-path", async (event, ...pathSegments) => {
+      return path.join(...pathSegments);
+    });
+
+    ipcMain.handle("open-file", async (event, filePath) => {
+      try {
+        await shell.openPath(filePath);
+        return { success: true };
+      } catch (error) {
+        console.error("Error opening file:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    ipcMain.handle("reveal-in-explorer", async (event, filePath) => {
+      try {
+        shell.showItemInFolder(filePath);
+        return { success: true };
+      } catch (error) {
+        console.error("Error revealing file:", error);
+        return { success: false, error: error.message };
+      }
     });
 
     // Utility handlers

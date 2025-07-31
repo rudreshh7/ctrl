@@ -35,6 +35,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
   deleteClipboardItem: (id) => ipcRenderer.invoke("delete-clipboard-item", id),
   clearClipboardHistory: () => ipcRenderer.invoke("clear-clipboard-history"),
 
+  // File System operations
+  getUserDirectories: () => ipcRenderer.invoke("get-user-directories"),
+  readDirectory: (dirPath) => ipcRenderer.invoke("read-directory", dirPath),
+  searchFiles: (query, searchPaths) => ipcRenderer.invoke("search-files", query, searchPaths),
+  joinPath: (...pathSegments) => ipcRenderer.invoke("join-path", ...pathSegments),
+  openFile: (filePath) => ipcRenderer.invoke("open-file", filePath),
+  revealInExplorer: (filePath) => ipcRenderer.invoke("reveal-in-explorer", filePath),
+
   // Utility operations
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
   hideWindow: () => ipcRenderer.invoke("hide-window"),
