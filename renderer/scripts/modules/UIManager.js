@@ -114,7 +114,7 @@ export class UIManager {
         <div style="margin-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">
           <p>⚡ <strong>s</strong> = Settings • <strong>e</strong> = Emojis • <strong>sum</strong> = Calculator • <strong>tools</strong> = Tools Directory</p>
           <p>➕ <strong>add-snippet</strong> = New Snippet • <strong>add-document</strong> = New Document • <strong>add-bookmark</strong> = New Bookmark</p>
-          <p>💡 Type ":" to browse emoji categories</p>
+          <p>💡 Type ":" to browse emoji categories • Type "." for clipboard history</p>
           <p>🔍 Search for snippets, documents, bookmarks, or tools</p>
         </div>
       </div>

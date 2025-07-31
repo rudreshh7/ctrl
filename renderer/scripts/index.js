@@ -5,6 +5,8 @@ import { UIManager } from "./modules/UIManager.js";
 import { FormManager } from "./modules/FormManager.js";
 import { CommandHandler } from "./modules/CommandHandler.js";
 import { EventManager } from "./modules/EventManager.js";
+import { ClipboardManager } from "./modules/clipboardhistory/ClipboardManager.js";
+import { ClipboardUI } from "./modules/clipboardhistory/ClipboardUI.js";
 
 class CtrlSearch {
   constructor() {
@@ -21,6 +23,8 @@ class CtrlSearch {
     this.emojiPicker = new EmojiPicker();
     this.searchManager = new SearchManager();
     this.uiManager = new UIManager(this.resultsContainer);
+    this.clipboardManager = new ClipboardManager();
+    this.clipboardUI = new ClipboardUI(this.resultsContainer, this.clipboardManager);
     this.formManager = new FormManager(
       this.resultsContainer,
       () => this.searchManager.loadData(), // onDataReload
@@ -74,6 +78,8 @@ class CtrlSearch {
     this.resultsContainer.addEventListener("escapePressed", () => {
       if (this.emojiPicker.isInEmojiMode()) {
         this.exitEmojiMode();
+      } else if (this.clipboardManager.isInClipboardHistoryMode()) {
+        this.exitClipboardMode();
       } else {
         window.electronAPI.hideWindow();
       }
@@ -98,6 +104,24 @@ class CtrlSearch {
       this.eventManager.clearSearchInput();
       this.showEmptyStateAndFocus();
     });
+
+    // Handle clipboard mode events
+    this.resultsContainer.addEventListener("enterClipboardMode", () => {
+      this.enterClipboardMode();
+    });
+
+    this.resultsContainer.addEventListener("exitClipboardMode", () => {
+      this.exitClipboardMode();
+    });
+
+    // Handle clipboard refresh
+    this.resultsContainer.addEventListener("refreshClipboardHistory", () => {
+      if (this.clipboardManager.isInClipboardHistoryMode()) {
+        const query = this.eventManager.getSearchValue();
+        const results = this.clipboardManager.searchClipboardHistory(query);
+        this.clipboardUI.displayClipboardResults(results);
+      }
+    });
   }
 
   focusSearch() {
@@ -112,9 +136,29 @@ class CtrlSearch {
       if (this.emojiPicker.isInEmojiMode()) {
         const results = this.emojiPicker.showEmojiPickerInterface();
         this.uiManager.displayResults(results);
+      } else if (this.clipboardManager.isInClipboardHistoryMode()) {
+        const results = this.clipboardManager.searchClipboardHistory('');
+        this.clipboardUI.displayClipboardResults(results);
       } else {
         this.uiManager.showEmptyState();
       }
+      return;
+    }
+
+    // Check if user wants to enter clipboard mode
+    if (query === "." && !this.clipboardManager.isInClipboardHistoryMode()) {
+      console.log("Entering clipboard mode");
+      this.enterClipboardMode();
+      return;
+    }
+
+    // If query starts with "." and we're not in clipboard mode, enter clipboard mode with search
+    if (query.startsWith(".") && !this.clipboardManager.isInClipboardHistoryMode()) {
+      console.log("Entering clipboard mode with search");
+      this.enterClipboardMode();
+      const clipboardQuery = query.substring(1);
+      const results = this.clipboardManager.searchClipboardHistory(clipboardQuery);
+      this.clipboardUI.displayClipboardResults(results);
       return;
     }
 
@@ -132,6 +176,13 @@ class CtrlSearch {
       const emojiQuery = query.substring(1);
       const results = this.emojiPicker.searchEmojisInPicker(emojiQuery);
       this.uiManager.displayResults(results);
+      return;
+    }
+
+    // Handle clipboard search when in clipboard mode
+    if (this.clipboardManager.isInClipboardHistoryMode()) {
+      const results = this.clipboardManager.searchClipboardHistory(query);
+      this.clipboardUI.displayClipboardResults(results);
       return;
     }
 
@@ -158,6 +209,22 @@ class CtrlSearch {
 
   exitEmojiMode() {
     this.emojiPicker.exitEmojiMode();
+    this.eventManager.updateSearchPlaceholder("Fuzzy search snippets, documents, bookmarks, and tools...");
+    this.eventManager.clearSearchInput();
+    this.showEmptyStateAndFocus();
+  }
+
+  // Clipboard mode methods
+  enterClipboardMode() {
+    this.eventManager.updateSearchPlaceholder("Search clipboard history... (ESC to go back)");
+    this.eventManager.clearSearchInput();
+    const results = this.clipboardManager.enterClipboardMode();
+    this.clipboardUI.displayClipboardResults(results);
+    this.focusSearch();
+  }
+
+  exitClipboardMode() {
+    this.clipboardManager.exitClipboardMode();
     this.eventManager.updateSearchPlaceholder("Fuzzy search snippets, documents, bookmarks, and tools...");
     this.eventManager.clearSearchInput();
     this.showEmptyStateAndFocus();

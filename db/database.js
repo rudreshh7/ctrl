@@ -61,6 +61,19 @@ function initDatabase() {
         )
       `);
 
+      // Create clipboard_history table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS clipboard_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          type TEXT NOT NULL DEFAULT 'text',
+          content TEXT NOT NULL,
+          preview TEXT,
+          size INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       console.log("Database initialized successfully");
 
       // Add sample data for testing
@@ -341,6 +354,90 @@ function deleteTool(id) {
   });
 }
 
+// Clipboard History operations
+function getAllClipboardHistory() {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare("SELECT * FROM clipboard_history ORDER BY created_at DESC LIMIT 1000");
+      const rows = stmt.all();
+      resolve(rows);
+    } catch (error) {
+      console.error("Error getting clipboard history:", error);
+      resolve([]);
+    }
+  });
+}
+
+function addClipboardItem(type, content, preview, size) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Don't save if content is empty
+      if (!content || content.trim() === "") {
+        resolve({ success: false, error: "Content cannot be empty" });
+        return;
+      }
+
+      // Check if this exact content already exists as the most recent item
+      const checkStmt = db.prepare("SELECT id FROM clipboard_history WHERE content = ? ORDER BY created_at DESC LIMIT 1");
+      const existing = checkStmt.get(content);
+      
+      if (existing) {
+        // Update the timestamp of existing item instead of creating duplicate
+        const updateStmt = db.prepare("UPDATE clipboard_history SET created_at = CURRENT_TIMESTAMP WHERE id = ?");
+        updateStmt.run(existing.id);
+        resolve({ id: existing.id, success: true });
+        return;
+      }
+
+      const stmt = db.prepare("INSERT INTO clipboard_history (type, content, preview, size) VALUES (?, ?, ?, ?)");
+      const result = stmt.run(type, content, preview || content.substring(0, 100), size || 0);
+      resolve({ id: result.lastInsertRowid, success: true });
+    } catch (error) {
+      console.error("Error adding clipboard item:", error);
+      resolve({ success: false, error: error.message });
+    }
+  });
+}
+
+function updateClipboardItem(id, type, content, preview, size) {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare("UPDATE clipboard_history SET type = ?, content = ?, preview = ?, size = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+      const result = stmt.run(type, content, preview || content.substring(0, 100), size || 0, id);
+      resolve({ success: result.changes > 0 });
+    } catch (error) {
+      console.error("Error updating clipboard item:", error);
+      resolve({ success: false, error: error.message });
+    }
+  });
+}
+
+function deleteClipboardItem(id) {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare("DELETE FROM clipboard_history WHERE id = ?");
+      const result = stmt.run(id);
+      resolve({ success: result.changes > 0 });
+    } catch (error) {
+      console.error("Error deleting clipboard item:", error);
+      resolve({ success: false, error: error.message });
+    }
+  });
+}
+
+function clearClipboardHistory() {
+  return new Promise((resolve, reject) => {
+    try {
+      const stmt = db.prepare("DELETE FROM clipboard_history");
+      const result = stmt.run();
+      resolve({ success: true, deletedCount: result.changes });
+    } catch (error) {
+      console.error("Error clearing clipboard history:", error);
+      resolve({ success: false, error: error.message });
+    }
+  });
+}
+
 module.exports = {
   initDatabase,
   getAllSnippets,
@@ -355,4 +452,9 @@ module.exports = {
   getAllTools,
   addTool,
   deleteTool,
+  getAllClipboardHistory,
+  addClipboardItem,
+  updateClipboardItem,
+  deleteClipboardItem,
+  clearClipboardHistory,
 };

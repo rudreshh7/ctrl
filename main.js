@@ -20,6 +20,11 @@ const {
   getAllTools,
   addTool,
   deleteTool,
+  getAllClipboardHistory,
+  addClipboardItem,
+  updateClipboardItem,
+  deleteClipboardItem,
+  clearClipboardHistory,
 } = require("./db/database");
 
 class CtrlApp {
@@ -164,6 +169,27 @@ class CtrlApp {
 
     ipcMain.handle("delete-tool", async (event, id) => {
       return deleteTool(id);
+    });
+
+    // Clipboard History handlers
+    ipcMain.handle("get-clipboard-history", async () => {
+      return getAllClipboardHistory();
+    });
+
+    ipcMain.handle("add-clipboard-item", async (event, type, content, preview, size) => {
+      return addClipboardItem(type, content, preview, size);
+    });
+
+    ipcMain.handle("update-clipboard-item", async (event, id, type, content, preview, size) => {
+      return updateClipboardItem(id, type, content, preview, size);
+    });
+
+    ipcMain.handle("delete-clipboard-item", async (event, id) => {
+      return deleteClipboardItem(id);
+    });
+
+    ipcMain.handle("clear-clipboard-history", async () => {
+      return clearClipboardHistory();
     });
 
     // Utility handlers

@@ -26,6 +26,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("add-tool", name, url, description, category, keywords),
   deleteTool: (id) => ipcRenderer.invoke("delete-tool", id),
 
+  // Clipboard History operations
+  getClipboardHistory: () => ipcRenderer.invoke("get-clipboard-history"),
+  addClipboardItem: (type, content, preview, size) =>
+    ipcRenderer.invoke("add-clipboard-item", type, content, preview, size),
+  updateClipboardItem: (id, type, content, preview, size) =>
+    ipcRenderer.invoke("update-clipboard-item", id, type, content, preview, size),
+  deleteClipboardItem: (id) => ipcRenderer.invoke("delete-clipboard-item", id),
+  clearClipboardHistory: () => ipcRenderer.invoke("clear-clipboard-history"),
+
   // Utility operations
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
   hideWindow: () => ipcRenderer.invoke("hide-window"),

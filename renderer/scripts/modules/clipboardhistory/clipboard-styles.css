@@ -1,0 +1,374 @@
+/* Clipboard History Styles */
+.clipboard-history-container {
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.clipboard-header {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.clipboard-header h3 {
+  margin: 0 0 4px 0;
+  color: #1f2937;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.clipboard-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.clipboard-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clipboard-item {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.clipboard-item:hover,
+.clipboard-item.highlighted {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+  background: #fafbff;
+}
+
+.clipboard-item.copied {
+  border-color: #10b981;
+  background: #f0fdf4;
+  animation: copyFeedback 1s ease;
+}
+
+@keyframes copyFeedback {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.clipboard-item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.clipboard-item-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.clipboard-icon {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+}
+
+.clipboard-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.clipboard-item-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.clipboard-content-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #1f2937;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.clipboard-url {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.clipboard-url:hover {
+  text-decoration: underline;
+}
+
+.clipboard-code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+}
+
+.clipboard-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.clipboard-type {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.clipboard-time,
+.clipboard-size {
+  font-variant-numeric: tabular-nums;
+}
+
+.clipboard-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.clipboard-item:hover .clipboard-item-actions {
+  opacity: 1;
+}
+
+.clipboard-action {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.clipboard-action:hover {
+  background: #f3f4f6;
+}
+
+.clipboard-action.copy-btn:hover {
+  background: #dbeafe;
+  color: #3b82f6;
+}
+
+.clipboard-action.edit-btn:hover {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+.clipboard-action.delete-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.action-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Color Preview */
+.clipboard-color-preview {
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Image Preview */
+.clipboard-image-preview {
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.image-placeholder {
+  width: 40px;
+  height: 30px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.image-icon {
+  width: 12px;
+  height: 12px;
+  color: #9ca3af;
+}
+
+.image-placeholder span {
+  font-size: 8px;
+  color: #9ca3af;
+  text-align: center;
+  line-height: 1;
+}
+
+/* Edit Form */
+.clipboard-edit-form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.clipboard-edit-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+.clipboard-edit-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.clipboard-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.clipboard-edit-save,
+.clipboard-edit-cancel {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clipboard-edit-save {
+  background: #3b82f6;
+  color: white;
+}
+
+.clipboard-edit-save:hover {
+  background: #2563eb;
+}
+
+.clipboard-edit-cancel {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.clipboard-edit-cancel:hover {
+  background: #e5e7eb;
+}
+
+/* Empty State */
+.empty-clipboard-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.empty-clipboard-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  color: #d1d5db;
+}
+
+.empty-clipboard-state p {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.empty-clipboard-help {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.empty-clipboard-help p {
+  margin: 4px 0;
+}
+
+/* Scrollbar Styling */
+.clipboard-history-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.clipboard-history-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.clipboard-history-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.clipboard-history-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Dark mode support (if needed) */
+@media (prefers-color-scheme: dark) {
+  .clipboard-item {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .clipboard-item:hover,
+  .clipboard-item.highlighted {
+    background: #111827;
+    border-color: #3b82f6;
+  }
+  
+  .clipboard-content-text {
+    color: #f9fafb;
+  }
+  
+  .clipboard-code {
+    background: #374151;
+    color: #f9fafb;
+  }
+  
+  .clipboard-edit-textarea {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .color-swatch {
+    border-color: #4b5563;
+  }
+}
