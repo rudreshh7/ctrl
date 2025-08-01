@@ -82,7 +82,11 @@ export class SearchManager {
       ];
 
       this.fuse = new Fuse(allData, options);
-      console.log("Fuse.js initialized successfully with", allData.length, "items");
+      console.log(
+        "Fuse.js initialized successfully with",
+        allData.length,
+        "items"
+      );
     } catch (error) {
       console.error("Error creating Fuse.js instance:", error);
     }
@@ -134,7 +138,7 @@ export class SearchManager {
       results.push({
         type: "system",
         id: "google-search",
-        title: `🔍 Search Google for "${query.trim()}"`,
+        title: ` Search Google for "${query.trim()}"`,
         subtitle: `Open Google search in your default browser`,
         data: { searchQuery: query.trim() },
         score: 10,
@@ -143,7 +147,7 @@ export class SearchManager {
       results.push({
         type: "system",
         id: "chatgpt-search",
-        title: `🤖 Ask ChatGPT about "${query.trim()}"`,
+        title: `Ask ChatGPT about "${query.trim()}"`,
         subtitle: `Open ChatGPT with your question in the default browser`,
         data: { searchQuery: query.trim() },
         score: 11,
@@ -159,7 +163,16 @@ export class SearchManager {
 
     const shortcuts = [
       {
-        triggers: ["s", "set", "setting", "settings", "config", "configuration", "pref", "preferences"],
+        triggers: [
+          "s",
+          "set",
+          "setting",
+          "settings",
+          "config",
+          "configuration",
+          "pref",
+          "preferences",
+        ],
         command: {
           type: "system",
           id: "settings",
@@ -299,7 +312,12 @@ export class SearchManager {
         },
       },
       {
-        triggers: ["add-document", "new-document", "document", "create-document"],
+        triggers: [
+          "add-document",
+          "new-document",
+          "document",
+          "create-document",
+        ],
         command: {
           type: "system",
           id: "add-document",
@@ -309,7 +327,12 @@ export class SearchManager {
         },
       },
       {
-        triggers: ["add-bookmark", "new-bookmark", "bookmark", "create-bookmark"],
+        triggers: [
+          "add-bookmark",
+          "new-bookmark",
+          "bookmark",
+          "create-bookmark",
+        ],
         command: {
           type: "system",
           id: "add-bookmark",

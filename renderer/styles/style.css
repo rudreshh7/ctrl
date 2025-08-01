@@ -88,6 +88,16 @@ body {
     padding: 8px;
     overflow-y: auto;
     -webkit-app-region: no-drag; /* Allow scrolling */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Remove padding when form is displayed */
+.results-container.form-active {
+    padding: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 .results-container::-webkit-scrollbar {
@@ -1111,4 +1121,176 @@ kbd {
   background: rgba(59, 130, 246, 0.2);
   color: #3b82f6;
   border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Minimal Form Styles - Following Brand Guidelines */
+.add-form-widget.minimal {
+  background: hsl(0, 0%, 98%);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px auto;
+  width: 90%;
+  max-width: 600px;
+  height: auto;
+  min-height: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .add-form-widget.minimal {
+    background: hsl(0, 0%, 12%);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .form-header h3 {
+    color: hsl(0, 0%, 90%);
+  }
+  
+  .form-icon {
+    color: hsl(0, 0%, 60%);
+  }
+  
+  .form-shortcut {
+    color: hsl(0, 0%, 60%);
+  }
+  
+  .form-input,
+  .form-textarea {
+    background: transparent;
+    color: hsl(0, 0%, 90%);
+  }
+  
+  .form-input::placeholder,
+  .form-textarea::placeholder {
+    color: hsl(0, 0%, 60%);
+  }
+  
+  .form-input:hover {
+    background: hsl(0, 0%, 18%);
+  }
+}
+
+.add-form-widget.minimal .form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 0;
+  border-bottom: none;
+  flex-shrink: 0;
+}
+
+.add-form-widget.minimal .form-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-form-widget.minimal .form-icon {
+  width: 16px;
+  height: 16px;
+  color: hsl(0, 0%, 50%);
+  stroke-width: 1.5px;
+}
+
+.add-form-widget.minimal .form-header h3 {
+  color: hsl(0, 0%, 20%);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+}
+
+.add-form-widget.minimal .form-shortcut {
+  color: hsl(0, 0%, 50%);
+  font-size: 12px;
+  font-weight: 400;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.add-form-widget.minimal .form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.add-form-widget.minimal .form-input,
+.add-form-widget.minimal .form-textarea {
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 8px 12px;
+  color: hsl(0, 0%, 20%);
+  font-size: 13px;
+  font-weight: 400;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  border-radius: 6px;
+  transition: background-color 100ms ease;
+  box-sizing: border-box;
+  resize: none;
+  width: 100%;
+}
+
+.add-form-widget.minimal .form-input::placeholder,
+.add-form-widget.minimal .form-textarea::placeholder {
+  color: hsl(0, 0%, 50%);
+  font-weight: 400;
+}
+
+.add-form-widget.minimal .form-input:hover,
+.add-form-widget.minimal .form-textarea:hover {
+  background: hsl(0, 0%, 96%);
+}
+
+.add-form-widget.minimal .form-input:focus,
+.add-form-widget.minimal .form-textarea:focus {
+  background: hsl(0, 0%, 94%);
+  box-shadow: 0 0 0 2px hsl(217, 91%, 60%);
+}
+
+.add-form-widget.minimal .form-textarea {
+  flex: 1;
+  min-height: 80px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-y: auto;
+}
+
+.add-form-widget.minimal .status-message {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin-top: 12px;
+  text-align: center;
+  transition: all 100ms ease;
+  flex-shrink: 0;
+}
+
+.add-form-widget.minimal .status-message.hidden {
+  display: none;
+}
+
+.add-form-widget.minimal .status-message.success {
+  background: hsl(142, 76%, 94%);
+  color: hsl(142, 76%, 36%);
+}
+
+.add-form-widget.minimal .status-message.error {
+  background: hsl(0, 84%, 94%);
+  color: hsl(0, 84%, 60%);
+}
+
+.add-form-widget.minimal .status-message.info {
+  background: hsl(217, 91%, 94%);
+  color: hsl(217, 91%, 60%);
 }

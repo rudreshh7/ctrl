@@ -17,18 +17,21 @@ export class FormManager {
   // Snippet Form Methods
   showAddSnippetForm() {
     const addSnippetHTML = `
-      <div class="add-form-widget compact">
+      <div class="add-form-widget minimal">
         <div class="form-header">
-          <h3>📝 Add Snippet</h3>
+          <div class="form-header-left">
+            <i data-lucide="code" class="form-icon"></i>
+            <h3>Add Snippet</h3>
+          </div>
           <span class="form-shortcut">Ctrl+Enter to save • ESC to cancel</span>
         </div>
         
-        <div class="form-content compact">
+        <div class="form-content">
           <input 
             type="text" 
             id="snippet-title" 
             class="form-input" 
-            placeholder="Title *"
+            placeholder="Title"
             required
           />
 
@@ -41,9 +44,8 @@ export class FormManager {
 
           <textarea 
             id="snippet-content" 
-            class="form-textarea compact" 
-            placeholder="Your code *" 
-            rows="4"
+            class="form-textarea" 
+            placeholder="Your code" 
             required
           ></textarea>
         </div>
@@ -52,8 +54,14 @@ export class FormManager {
       </div>
     `;
 
+    this.resultsContainer.classList.add("form-active");
     this.resultsContainer.innerHTML = addSnippetHTML;
     this.setupAddSnippetEvents();
+
+    // Re-initialize Lucide icons
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
 
     setTimeout(() => {
       document.getElementById("snippet-title").focus();
@@ -72,8 +80,30 @@ export class FormManager {
           this.saveSnippet();
         } else if (e.key === "Escape") {
           this.exitAddForm();
+        } else if (
+          e.key === "Tab" &&
+          !e.shiftKey &&
+          input === contentTextarea
+        ) {
+          // Allow Tab in textarea for code indentation
+          return;
         }
       });
+    });
+
+    // Auto-focus progression
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        descriptionInput.focus();
+      }
+    });
+
+    descriptionInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        contentTextarea.focus();
+      }
     });
   }
 
@@ -151,18 +181,21 @@ export class FormManager {
   // Document Form Methods
   showAddDocumentForm() {
     const addDocumentHTML = `
-      <div class="add-form-widget compact">
+      <div class="add-form-widget minimal">
         <div class="form-header">
-          <h3>📄 Add Document</h3>
+          <div class="form-header-left">
+            <i data-lucide="file-text" class="form-icon"></i>
+            <h3>Add Document</h3>
+          </div>
           <span class="form-shortcut">Ctrl+Enter to save • ESC to cancel</span>
         </div>
         
-        <div class="form-content compact">
+        <div class="form-content">
           <input 
             type="text" 
             id="document-title" 
             class="form-input" 
-            placeholder="Document title *"
+            placeholder="Document title"
             required
           />
           
@@ -170,7 +203,7 @@ export class FormManager {
             type="url" 
             id="document-link" 
             class="form-input" 
-            placeholder="https://example.com/document.pdf *"
+            placeholder="https://example.com/document.pdf"
             required
           />
         </div>
@@ -179,8 +212,14 @@ export class FormManager {
       </div>
     `;
 
+    this.resultsContainer.classList.add("form-active");
     this.resultsContainer.innerHTML = addDocumentHTML;
     this.setupAddDocumentEvents();
+
+    // Re-initialize Lucide icons
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
 
     setTimeout(() => {
       document.getElementById("document-title").focus();
@@ -200,6 +239,14 @@ export class FormManager {
           this.exitAddForm();
         }
       });
+    });
+
+    // Auto-focus progression
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        linkInput.focus();
+      }
     });
   }
 
@@ -277,18 +324,21 @@ export class FormManager {
   // Bookmark Form Methods
   showAddBookmarkForm() {
     const addBookmarkHTML = `
-      <div class="add-form-widget compact">
+      <div class="add-form-widget minimal">
         <div class="form-header">
-          <h3>🔖 Add Bookmark</h3>
+          <div class="form-header-left">
+            <i data-lucide="bookmark" class="form-icon"></i>
+            <h3>Add Bookmark</h3>
+          </div>
           <span class="form-shortcut">Ctrl+Enter to save • ESC to cancel</span>
         </div>
         
-        <div class="form-content compact">
+        <div class="form-content">
           <input 
             type="text" 
             id="bookmark-title" 
             class="form-input" 
-            placeholder="Bookmark title *"
+            placeholder="Bookmark title"
             required
           />
           
@@ -296,7 +346,7 @@ export class FormManager {
             type="url" 
             id="bookmark-url" 
             class="form-input" 
-            placeholder="https://example.com *"
+            placeholder="https://example.com"
             required
           />
           
@@ -312,8 +362,14 @@ export class FormManager {
       </div>
     `;
 
+    this.resultsContainer.classList.add("form-active");
     this.resultsContainer.innerHTML = addBookmarkHTML;
     this.setupAddBookmarkEvents();
+
+    // Re-initialize Lucide icons
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
 
     setTimeout(() => {
       document.getElementById("bookmark-title").focus();
@@ -334,6 +390,21 @@ export class FormManager {
           this.exitAddForm();
         }
       });
+    });
+
+    // Auto-focus progression
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        urlInput.focus();
+      }
+    });
+
+    urlInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        descriptionInput.focus();
+      }
     });
   }
 
@@ -416,6 +487,7 @@ export class FormManager {
 
   // Common form methods
   exitAddForm() {
+    this.resultsContainer.classList.remove("form-active");
     this.onBackToSearch();
   }
 
