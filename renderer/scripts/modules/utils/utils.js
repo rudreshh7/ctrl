@@ -32,8 +32,8 @@ export function showHelpDialog(container) {
       </div>
       <div class="help-section">
         <h4>External Search:</h4>
-        <p>🔍 <strong>Google Search</strong> - Available for any query</p>
-        <p>🤖 <strong>ChatGPT Search</strong> - Available for any query</p>
+        <p> <strong>Google Search</strong> - Available for any query</p>
+        <p> <strong>ChatGPT Search</strong> - Available for any query</p>
       </div>
     </div>
   `;

@@ -112,10 +112,10 @@ export class UIManager {
         <i data-lucide="search" class="empty-icon"></i>
         <p>Start typing to search...</p>
         <div style="margin-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">
-          <p>⚡ <strong>s</strong> = Settings • <strong>e</strong> = Emojis • <strong>sum</strong> = Calculator • <strong>tools</strong> = Tools Directory</p>
-          <p>➕ <strong>add-snippet</strong> = New Snippet • <strong>add-document</strong> = New Document • <strong>add-bookmark</strong> = New Bookmark</p>
-          <p>💡 Type ":" to browse emoji categories • Type "." for clipboard history • Type ">" for file search</p>
-          <p>🔍 Search for snippets, documents, bookmarks, or tools</p>
+          <p><strong>s</strong> = Settings • <strong>e</strong> = Emojis • <strong>sum</strong> = Calculator • <strong>tools</strong> = Tools Directory</p>
+          <p> <strong>add-snippet</strong> = New Snippet • <strong>add-document</strong> = New Document • <strong>add-bookmark</strong> = New Bookmark</p>
+          <p> Type ":" to browse emoji categories • Type "." for clipboard history • Type ">" for file search</p>
+          <p> Search for snippets, documents, bookmarks, or tools</p>
         </div>
       </div>
     `;
@@ -143,7 +143,7 @@ export class UIManager {
 
   showToolsDirectory(tools) {
     console.log("Showing tools directory");
-    
+
     const toolsHTML = `
       <div class="tools-directory-widget">
         <div class="tools-header">
@@ -152,7 +152,9 @@ export class UIManager {
         </div>
         
         <div class="tools-grid" id="tools-grid">
-          ${tools.map(tool => `
+          ${tools
+            .map(
+              (tool) => `
             <div class="tool-card" data-url="${tool.url}">
               <div class="tool-icon">🛠️</div>
               <div class="tool-content">
@@ -161,7 +163,9 @@ export class UIManager {
                 <span class="tool-category">${tool.category}</span>
               </div>
             </div>
-          `).join('')}
+          `
+            )
+            .join("")}
         </div>
 
         <div class="tools-actions">
@@ -175,43 +179,39 @@ export class UIManager {
   }
 
   setupToolsDirectoryEvents() {
-    const toolCards = document.querySelectorAll('.tool-card');
-    const backBtn = document.getElementById('tools-back-btn');
+    const toolCards = document.querySelectorAll(".tool-card");
+    const backBtn = document.getElementById("tools-back-btn");
 
     // Add click handlers for tool cards
-    toolCards.forEach(card => {
-      card.addEventListener('click', () => {
-        const url = card.getAttribute('data-url');
+    toolCards.forEach((card) => {
+      card.addEventListener("click", () => {
+        const url = card.getAttribute("data-url");
         window.electronAPI.openExternal(url);
         window.electronAPI.hideWindow();
       });
 
       // Add hover effect
-      card.addEventListener('mouseenter', () => {
-        card.style.transform = 'translateY(-2px)';
-        card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+      card.addEventListener("mouseenter", () => {
+        card.style.transform = "translateY(-2px)";
+        card.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
       });
 
-      card.addEventListener('mouseleave', () => {
-        card.style.transform = 'translateY(0)';
-        card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+      card.addEventListener("mouseleave", () => {
+        card.style.transform = "translateY(0)";
+        card.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
       });
     });
 
     // Back button
-    backBtn.addEventListener('click', () => {
+    backBtn.addEventListener("click", () => {
       // Emit custom event for back action
-      this.resultsContainer.dispatchEvent(
-        new CustomEvent("backToSearch")
-      );
+      this.resultsContainer.dispatchEvent(new CustomEvent("backToSearch"));
     });
 
     // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        this.resultsContainer.dispatchEvent(
-          new CustomEvent("backToSearch")
-        );
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.resultsContainer.dispatchEvent(new CustomEvent("backToSearch"));
       }
     });
   }
@@ -225,14 +225,19 @@ export class UIManager {
 
   navigateDown() {
     if (this.currentResults.length === 0) return;
-    this.selectedIndex = Math.min(this.selectedIndex + 1, this.currentResults.length - 1);
+    this.selectedIndex = Math.min(
+      this.selectedIndex + 1,
+      this.currentResults.length - 1
+    );
     this.updateSelection(this.selectedIndex);
   }
 
   selectCurrent() {
     if (this.currentResults.length > 0) {
       this.resultsContainer.dispatchEvent(
-        new CustomEvent("resultSelected", { detail: { index: this.selectedIndex } })
+        new CustomEvent("resultSelected", {
+          detail: { index: this.selectedIndex },
+        })
       );
     }
   }

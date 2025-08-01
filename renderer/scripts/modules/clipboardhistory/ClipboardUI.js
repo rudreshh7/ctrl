@@ -11,11 +11,16 @@ export class ClipboardUI {
     this.resultsContainer = resultsContainer;
     this.clipboardManager = clipboardManager;
     this.editingItemId = null;
+    this.selectedIndex = 0;
+    this.currentItems = [];
   }
 
   displayClipboardResults(items) {
     console.log("Displaying clipboard results:", items.length);
-    
+
+    this.currentItems = items;
+    this.selectedIndex = 0;
+
     if (items.length === 0) {
       this.showEmptyClipboardState();
       return;
@@ -29,7 +34,7 @@ export class ClipboardUI {
       <div class="clipboard-history-container">
         <div class="clipboard-header">
           <h3>📋 Clipboard History</h3>
-          <p>Press ESC to return to search</p>
+          <p>Press ESC to return to search • Use ↑↓ to navigate • Enter to select</p>
         </div>
         <div class="clipboard-items">
           ${html}
@@ -38,7 +43,9 @@ export class ClipboardUI {
     `;
 
     this.addClipboardEventListeners(items);
-    
+    this.setupKeyboardNavigation();
+    this.highlightItem(0);
+
     // Re-initialize Lucide icons
     if (typeof lucide !== "undefined") {
       lucide.createIcons();
@@ -52,23 +59,23 @@ export class ClipboardUI {
     const formattedSize = this.clipboardManager.formatFileSize(item.size);
 
     // Special handling for different content types
-    let contentPreview = '';
-    let specialPreview = '';
+    let contentPreview = "";
+    let specialPreview = "";
 
     switch (item.type) {
-      case 'color':
+      case "color":
         specialPreview = this.createColorPreview(item.content);
         contentPreview = item.content;
         break;
-      case 'url':
+      case "url":
         contentPreview = `<a href="${item.content}" class="clipboard-url" target="_blank">${item.preview}</a>`;
         break;
-      case 'code':
+      case "code":
         contentPreview = `<code class="clipboard-code">${item.preview}</code>`;
         break;
-      case 'image':
+      case "image":
         specialPreview = this.createImagePreview(item.content);
-        contentPreview = 'Image';
+        contentPreview = "Image";
         break;
       default:
         contentPreview = item.preview;
@@ -121,10 +128,13 @@ export class ClipboardUI {
   createColorPreview(colorValue) {
     // Normalize color value for CSS
     let cssColor = colorValue;
-    
+
     // Convert hex shorthand to full hex
     if (/^#[A-Fa-f0-9]{3}$/.test(colorValue)) {
-      cssColor = colorValue.replace(/^#([A-Fa-f0-9])([A-Fa-f0-9])([A-Fa-f0-9])$/, '#$1$1$2$2$3$3');
+      cssColor = colorValue.replace(
+        /^#([A-Fa-f0-9])([A-Fa-f0-9])([A-Fa-f0-9])$/,
+        "#$1$1$2$2$3$3"
+      );
     }
 
     return `
@@ -135,7 +145,7 @@ export class ClipboardUI {
   }
 
   createImagePreview(imagePath) {
-    // For now, show a placeholder. In a full implementation, 
+    // For now, show a placeholder. In a full implementation,
     // this would show the actual image thumbnail
     return `
       <div class="clipboard-image-preview">
@@ -149,86 +159,102 @@ export class ClipboardUI {
 
   getClipboardItemIcon(type) {
     const iconMap = {
-      text: 'type',
-      url: 'link',
-      email: 'mail',
-      phone: 'phone',
-      color: 'palette',
-      code: 'code',
-      file: 'file',
-      image: 'image',
+      text: "type",
+      url: "link",
+      email: "mail",
+      phone: "phone",
+      color: "palette",
+      code: "code",
+      file: "file",
+      image: "image",
     };
-    return iconMap[type] || 'clipboard';
+    return iconMap[type] || "clipboard";
   }
 
   getTypeColor(type) {
     const colorMap = {
-      text: '#6b7280',
-      url: '#3b82f6',
-      email: '#ef4444',
-      phone: '#10b981',
-      color: '#f59e0b',
-      code: '#8b5cf6',
-      file: '#f97316',
-      image: '#ec4899',
+      text: "#6b7280",
+      url: "#3b82f6",
+      email: "#ef4444",
+      phone: "#10b981",
+      color: "#f59e0b",
+      code: "#8b5cf6",
+      file: "#f97316",
+      image: "#ec4899",
     };
-    return colorMap[type] || '#6b7280';
+    return colorMap[type] || "#6b7280";
   }
 
   addClipboardEventListeners(items) {
     // Handle clipboard item clicks
-    this.resultsContainer.querySelectorAll('.clipboard-item').forEach((item, index) => {
-      // Main item click (copy to clipboard)
-      item.addEventListener('click', (e) => {
-        if (!e.target.closest('.clipboard-item-actions') && 
-            !e.target.closest('.clipboard-edit-form')) {
-          this.handleClipboardItemSelect(index, items);
-        }
+    this.resultsContainer
+      .querySelectorAll(".clipboard-item")
+      .forEach((item, index) => {
+        // Main item click (copy to clipboard)
+        item.addEventListener("click", (e) => {
+          if (
+            !e.target.closest(".clipboard-item-actions") &&
+            !e.target.closest(".clipboard-edit-form")
+          ) {
+            this.handleClipboardItemSelect(index, items);
+          }
+        });
       });
-    });
 
     // Handle action buttons
-    this.resultsContainer.querySelectorAll('.clipboard-action').forEach(button => {
-      button.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const action = button.dataset.action;
-        const itemElement = button.closest('.clipboard-item');
-        const itemId = itemElement.dataset.id;
-        const itemIndex = parseInt(itemElement.dataset.index);
-        
-        this.handleClipboardAction(action, itemId, itemIndex, items);
+    this.resultsContainer
+      .querySelectorAll(".clipboard-action")
+      .forEach((button) => {
+        button.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const action = button.dataset.action;
+          const itemElement = button.closest(".clipboard-item");
+          const itemId = itemElement.dataset.id;
+          const itemIndex = parseInt(itemElement.dataset.index);
+
+          this.handleClipboardAction(action, itemId, itemIndex, items);
+        });
       });
-    });
 
     // Handle edit form actions
-    this.resultsContainer.querySelectorAll('.clipboard-edit-save').forEach(button => {
-      button.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const itemId = button.dataset.id;
-        this.handleEditSave(itemId);
+    this.resultsContainer
+      .querySelectorAll(".clipboard-edit-save")
+      .forEach((button) => {
+        button.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const itemId = button.dataset.id;
+          this.handleEditSave(itemId);
+        });
       });
-    });
 
-    this.resultsContainer.querySelectorAll('.clipboard-edit-cancel').forEach(button => {
-      button.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const itemId = button.dataset.id;
-        this.handleEditCancel(itemId);
+    this.resultsContainer
+      .querySelectorAll(".clipboard-edit-cancel")
+      .forEach((button) => {
+        button.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const itemId = button.dataset.id;
+          this.handleEditCancel(itemId);
+        });
       });
-    });
 
     // Handle keyboard shortcuts in edit mode
-    this.resultsContainer.querySelectorAll('.clipboard-edit-textarea').forEach(textarea => {
-      textarea.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          const itemId = textarea.closest('.clipboard-edit-form').id.replace('edit-form-', '');
-          this.handleEditCancel(itemId);
-        } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-          const itemId = textarea.closest('.clipboard-edit-form').id.replace('edit-form-', '');
-          this.handleEditSave(itemId);
-        }
+    this.resultsContainer
+      .querySelectorAll(".clipboard-edit-textarea")
+      .forEach((textarea) => {
+        textarea.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            const itemId = textarea
+              .closest(".clipboard-edit-form")
+              .id.replace("edit-form-", "");
+            this.handleEditCancel(itemId);
+          } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            const itemId = textarea
+              .closest(".clipboard-edit-form")
+              .id.replace("edit-form-", "");
+            this.handleEditSave(itemId);
+          }
+        });
       });
-    });
   }
 
   async handleClipboardItemSelect(index, items) {
@@ -239,11 +265,11 @@ export class ClipboardUI {
 
     // Copy to clipboard
     const result = await this.clipboardManager.copyToClipboard(item.content);
-    
+
     if (result.success) {
       // Show success feedback
       this.showCopyFeedback(index);
-      
+
       // Hide window after a short delay
       setTimeout(() => {
         window.electronAPI.hideWindow();
@@ -255,31 +281,35 @@ export class ClipboardUI {
 
   async handleClipboardAction(action, itemId, itemIndex, items) {
     const item = items[itemIndex];
-    
+
     switch (action) {
-      case 'copy':
-        const copyResult = await this.clipboardManager.copyToClipboard(item.content);
+      case "copy":
+        const copyResult = await this.clipboardManager.copyToClipboard(
+          item.content
+        );
         if (copyResult.success) {
           this.showCopyFeedback(itemIndex);
         }
         break;
-        
-      case 'edit':
+
+      case "edit":
         this.showEditForm(itemId);
         break;
-        
-      case 'delete':
-        if (confirm('Are you sure you want to delete this clipboard item?')) {
-          const deleteResult = await this.clipboardManager.deleteClipboardItem(itemId);
+
+      case "delete":
+        if (confirm("Are you sure you want to delete this clipboard item?")) {
+          const deleteResult = await this.clipboardManager.deleteClipboardItem(
+            itemId
+          );
           if (deleteResult.success) {
             // Remove item from UI
             const itemElement = document.querySelector(`[data-id="${itemId}"]`);
             if (itemElement) {
               itemElement.remove();
             }
-            
+
             // Show empty state if no items left
-            const remainingItems = document.querySelectorAll('.clipboard-item');
+            const remainingItems = document.querySelectorAll(".clipboard-item");
             if (remainingItems.length === 0) {
               this.showEmptyClipboardState();
             }
@@ -291,17 +321,19 @@ export class ClipboardUI {
 
   showEditForm(itemId) {
     // Hide any other open edit forms
-    this.resultsContainer.querySelectorAll('.clipboard-edit-form').forEach(form => {
-      if (form.id !== `edit-form-${itemId}`) {
-        form.style.display = 'none';
-      }
-    });
+    this.resultsContainer
+      .querySelectorAll(".clipboard-edit-form")
+      .forEach((form) => {
+        if (form.id !== `edit-form-${itemId}`) {
+          form.style.display = "none";
+        }
+      });
 
     // Show the edit form for this item
     const editForm = document.getElementById(`edit-form-${itemId}`);
     if (editForm) {
-      editForm.style.display = 'block';
-      const textarea = editForm.querySelector('.clipboard-edit-textarea');
+      editForm.style.display = "block";
+      const textarea = editForm.querySelector(".clipboard-edit-textarea");
       if (textarea) {
         textarea.focus();
         textarea.select();
@@ -312,18 +344,21 @@ export class ClipboardUI {
 
   async handleEditSave(itemId) {
     const editForm = document.getElementById(`edit-form-${itemId}`);
-    const textarea = editForm.querySelector('.clipboard-edit-textarea');
+    const textarea = editForm.querySelector(".clipboard-edit-textarea");
     const newContent = textarea.value;
 
     if (newContent.trim()) {
-      const result = await this.clipboardManager.updateClipboardItem(itemId, newContent);
-      
+      const result = await this.clipboardManager.updateClipboardItem(
+        itemId,
+        newContent
+      );
+
       if (result.success) {
         // Refresh the clipboard display
         this.refreshClipboardDisplay();
         this.handleEditCancel(itemId);
       } else {
-        alert('Failed to update item: ' + result.message);
+        alert("Failed to update item: " + result.message);
       }
     }
   }
@@ -331,7 +366,7 @@ export class ClipboardUI {
   handleEditCancel(itemId) {
     const editForm = document.getElementById(`edit-form-${itemId}`);
     if (editForm) {
-      editForm.style.display = 'none';
+      editForm.style.display = "none";
     }
     this.editingItemId = null;
   }
@@ -339,14 +374,15 @@ export class ClipboardUI {
   showCopyFeedback(itemIndex) {
     const itemElement = document.querySelector(`[data-index="${itemIndex}"]`);
     if (itemElement) {
-      itemElement.classList.add('copied');
+      itemElement.classList.add("copied");
       setTimeout(() => {
-        itemElement.classList.remove('copied');
+        itemElement.classList.remove("copied");
       }, 1000);
     }
   }
 
   showEmptyClipboardState() {
+    this.cleanupKeyboardNavigation();
     this.resultsContainer.innerHTML = `
       <div class="clipboard-history-container">
         <div class="clipboard-header">
@@ -375,27 +411,93 @@ export class ClipboardUI {
     );
   }
 
+  setupKeyboardNavigation() {
+    // Remove any existing listeners first to prevent duplicates
+    this.cleanupKeyboardNavigation();
+
+    // Store the bound functions so we can remove them later
+    this.boundNavigateUp = () => {
+      if (this.currentItems.length > 0) {
+        this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
+        this.highlightItem(this.selectedIndex);
+      }
+    };
+
+    this.boundNavigateDown = () => {
+      if (this.currentItems.length > 0) {
+        this.selectedIndex = Math.min(
+          this.selectedIndex + 1,
+          this.currentItems.length - 1
+        );
+        this.highlightItem(this.selectedIndex);
+      }
+    };
+
+    this.boundSelectCurrent = () => {
+      if (this.currentItems.length > 0) {
+        this.selectHighlightedItem();
+      }
+    };
+
+    // Listen for keyboard navigation events from EventManager
+    this.resultsContainer.addEventListener("navigateUp", this.boundNavigateUp);
+    this.resultsContainer.addEventListener(
+      "navigateDown",
+      this.boundNavigateDown
+    );
+    this.resultsContainer.addEventListener(
+      "selectCurrent",
+      this.boundSelectCurrent
+    );
+  }
+
+  cleanupKeyboardNavigation() {
+    if (this.boundNavigateUp) {
+      this.resultsContainer.removeEventListener(
+        "navigateUp",
+        this.boundNavigateUp
+      );
+    }
+    if (this.boundNavigateDown) {
+      this.resultsContainer.removeEventListener(
+        "navigateDown",
+        this.boundNavigateDown
+      );
+    }
+    if (this.boundSelectCurrent) {
+      this.resultsContainer.removeEventListener(
+        "selectCurrent",
+        this.boundSelectCurrent
+      );
+    }
+  }
+
   // Navigation methods for keyboard support
   highlightItem(index) {
     // Remove previous highlights
-    this.resultsContainer.querySelectorAll('.clipboard-item').forEach(item => {
-      item.classList.remove('highlighted');
-    });
+    this.resultsContainer
+      .querySelectorAll(".clipboard-item")
+      .forEach((item) => {
+        item.classList.remove("highlighted");
+      });
 
     // Highlight current item
-    const currentItem = this.resultsContainer.querySelector(`[data-index="${index}"]`);
+    const currentItem = this.resultsContainer.querySelector(
+      `[data-index="${index}"]`
+    );
     if (currentItem) {
-      currentItem.classList.add('highlighted');
-      currentItem.scrollIntoView({ block: 'nearest' });
+      currentItem.classList.add("highlighted");
+      currentItem.scrollIntoView({ block: "nearest" });
     }
   }
 
   selectHighlightedItem() {
-    const highlightedItem = this.resultsContainer.querySelector('.clipboard-item.highlighted');
-    if (highlightedItem) {
-      const index = parseInt(highlightedItem.dataset.index);
-      const items = this.clipboardManager.getClipboardHistory();
-      this.handleClipboardItemSelect(index, items);
+    if (
+      this.currentItems.length > 0 &&
+      this.selectedIndex >= 0 &&
+      this.selectedIndex < this.currentItems.length
+    ) {
+      this.handleClipboardItemSelect(this.selectedIndex, this.currentItems);
     }
   }
 }

@@ -10,6 +10,8 @@
     "build": "electron-builder",
     "build:win": "electron-builder --win",
     "dist": "electron-builder --publish=never",
+      "rebuild": "electron-rebuild",
+
     "pack": "electron-builder --dir"
   },
   "author": "rudr",
